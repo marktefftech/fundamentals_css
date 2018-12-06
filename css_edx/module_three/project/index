@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Mark Teffeteller</title>
+        <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+        <header>
+        <h1>Mark Teffeteller</h1>
+        <h2>Commissions Analyst, NetSpend</h2>
+
+        <p id="quote">
+        "There are more molecules in a glass of water than their are molecules in the world's oceans" <br> -Neil DeGrasse Tyson
+        </p>
+
+        <p id="aboutMe">
+        Hi my name is Mark. I live in Austin, Texas and recently graduated from UT Austin with an MIS degree.
+        I work for a financial technology company as a systems analyst. <br>
+        Music is my favorite thing. I also enjoy running, and soccer.
+        I'm here to get better at designing web projects end-to end.
+        </p>
+        </header>
+        <br>
+
+        <article class="parts">
+        <h3 class= "subheaders">Education</h3>
+        <ul class = "listSections">
+         <li id="school">The University of Texas at Austin</li>
+         <li> BBA, Management Information Systems</li>
+        </ul>
+        </article>
+        <br>
+
+        <article class="parts">
+        <h3 class= "subheaders"> Work Experience</h3>
+        <ul class = "listSections">
+          <li> Commissions Analyst, NetSpend </li>
+          <li> Computer Specialist, McCombs School of Business </li>
+          <li> Intern, CrowdStrike </li>
+          <li> Intern, Wells Fargo </li>
+        </ul>
+        </article>
+        <br>
+
+        <article class="parts">
+        <h3 class= "subheaders"> Favorite Things</h3>
+        <ul class = "listSections">
+          <li> People </li>
+          <li> Music </li>
+          <li> Health </li>
+          <li> Technology </li>
+        </ul>
+        </article>
+        <br>
+
+    </body>
+    <footer>
+    Copyright 2018 Mark Teffeteller. Thanks for visiting
+    </footer>
+</html>

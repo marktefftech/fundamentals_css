@@ -1,0 +1,26 @@
+body {
+  background-color: #F8EEE7;
+}
+header p {
+  background-color: #F4DECB; /* cremeeeee */
+}
+
+footer p {
+  background-color: #F4DECB; /* cremeeeee */
+}
+
+section p  {
+  background-color: #94618E; /*purple*/
+  color: #F8EEE7;
+}
+article p {
+  background-color: #49274A; /* dark purple*/
+}
+#specific {
+  background-color: #FFFFFF; /*white*/
+  color: #49274A; /*cremeeeee*/
+}
+p:hover {
+  background-color: #B4DBC0 !important;
+  border: 2px dashed black;
+}

@@ -1,0 +1,79 @@
+body {
+    background-color: black;
+}
+
+header{
+  text-align: center;
+  color: teal;
+  border: orange dotted .1em;
+  padding-bottom: .2em;
+}
+
+header:active {
+  text-align: center;
+  color: teal;
+  background-color: purple;
+}
+
+h2 {
+  color: orange;
+}
+
+#quote {
+  text-align: center;
+  font-size: 2em;
+  color: teal;
+}
+
+#aboutMe {
+  text-align: left;
+  padding: 2em;
+
+
+}
+
+p {
+  color: white;
+  text-decoration: bold;
+  text-align: left;
+
+}
+
+.parts {
+  background-color: black;
+  margin: auto;
+  padding: .3em;
+  border: .1em white dotted;
+  text-align: left;
+  color: teal;
+}
+
+.parts:hover {
+  background-color: teal;
+  color: black;
+  padding: .3em;
+
+}
+
+
+.subheaders:hover {
+  color: black;
+}
+
+.listSections {
+  color: white;
+  text-decoration: underline;
+}
+
+.listSections:hover {
+  color: orange;
+  text-decoration: underline;
+}
+
+
+footer {
+  font-size: 1em;
+  color: white;
+  text-align: center;
+  padding-top: 2em;
+}

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Mark Teffeteller</title>
+        <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+        <h1>Mark Teffeteller</h1>
+        <h2>~Austin, Texas~</h2>
+        <p>
+        "There are more molecules in a glass of water than their are molecules in the world's oceans" <br> Neil DeGrasse Tyson
+        </p>
+        <p>
+        Hi my name is Mark. I live in Austin, Texas and recently graduated from UT Austin with an MIS degree <br>
+        I work for a financial technology company as a systems analyst. <br>
+        Music is my favorite thing. I also enjoy running, and soccer. <br>
+        I'm here to get better at designing web projects end-to end.
+        </p>
+
+        <h3>Favorite Foods</h3>
+        <ol>
+          <li> thin crust pizza </li>
+          <li> fruit </li>
+          <li> veggie burger </li>
+          <li> ice cream </li>
+        </ol>
+
+        <h3> Favorite websites</h3>
+        <ul>
+          <li> <a href="https://www.reddit.com/r/Austin/" target="_blank"> Reddit Austin </a> </li>
+          <li> <a href="https://www.canva.com" target="_blank"> Canva - Design </a> </li>
+    </body>
+</html>

@@ -1,0 +1,37 @@
+/*Here are the color HEX code used above:
+
+    light yellow: #ffff99
+    medium yellow: #ffcc00
+    orange: #ff6600
+
+Here are the fonts used above:
+
+    Helvetica
+    Impact
+    Courier New
+*/
+
+h1 {
+  color: orange;
+  border: .1em orange solid;
+
+}
+
+h2 {
+  background-color: teal;
+  color: #ffcc99;
+}
+
+body {
+  background-color: #ffcc99;
+}
+
+p {
+  border: teal dotted;
+  padding: .5em;
+}
+
+
+li {
+  font-weight: 900;
+}

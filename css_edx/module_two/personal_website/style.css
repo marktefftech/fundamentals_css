@@ -1,0 +1,37 @@
+
+h1,h2,h3{
+  text-align: center;
+  color: teal;
+}
+
+h3 {
+  border: teal dotted;
+  font: "Times New Roman";
+  font-size: 3em;
+}
+
+body {
+    background-color: black;
+    border
+}
+
+p {
+  color: white;
+  text-decoration: bold;
+  text-align: center;
+  border: .1em white dotted;
+}
+
+
+ol,ul {
+  text-align: center;
+  color: white;
+  background-color: teal;
+  padding-right: 75em;
+
+}
+
+ul {
+  font-weight: 700;
+  font-size: 1em;
+}

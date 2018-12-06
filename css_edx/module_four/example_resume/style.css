@@ -1,0 +1,130 @@
+*{
+  margin:0;
+  padding:0;
+  border:0;
+  box-sizing: border-box;
+  list-style:none;
+  text-decoration:none;
+  }
+
+html{
+  background:#fff;
+
+}
+
+body{
+  width:75%;
+  margin: 0 auto;
+  font-size:1.2vw;
+  font-family: 'Montserrat', sans-serif;
+
+}
+
+span{
+  color:#57C3BF;
+}
+
+.header{
+  display: flex;
+  justify-content: space-between;
+  background:#fff;
+}
+
+h1{
+  font-size:4em;
+}
+
+.header>ol{
+  margin-top:1.5em;
+ }
+
+.work{
+  background:#EFEFEF;
+  margin-top:1.5vw;
+  margin-bottom:1.5vw;
+  width:69%;
+  display:inline;
+  float:left;
+  position:relative;
+}
+
+.work li{
+  display: flex;
+  justify-content: space-between;
+  padding-bottom:0.4vw;
+
+}
+
+.year{
+  padding:3vw 1vw;
+
+}
+
+li>p.work-info{
+  border-left: 1px solid #000;
+  padding: 0 1vw;
+}
+
+hr{
+    background:#fff;
+    display: block;
+    margin-left: auto;
+    border: 2px solid #000;
+ }
+
+h2{
+  border-bottom: 1px solid #000;
+  padding: 10px 0 0 10px;
+  text-align:left;
+
+}
+
+.aside-head{
+  background:#EFEFEF;
+
+}
+
+.aside-info{
+  padding:0.73vw;
+  padding-top:0.85vw;
+  background:#EFEFEF;
+}
+
+.objective{
+  width:30%;
+  display:inline;
+  float:right;
+  margin-top:1.5vw;
+}
+
+.education{
+  width:30%;
+  display:inline;
+  float:right;
+  margin-top:1.3vw;
+}
+
+.leadership{
+  width:30%;
+  display:inline;
+  float:right;
+  margin-top:1.3vw;
+  margin-bottom:1.5vw;
+}
+
+footer{
+  clear:both;
+  background:#EFEFEF;
+  margin-top:1vw;
+}
+
+footer li{
+  display: flex;
+  justify-content: space-between;
+}
+
+p.contact{
+  background:#fff;
+  padding:10px;
+  text-align:center;
+}

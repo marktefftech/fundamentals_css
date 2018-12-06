@@ -1,0 +1,4438 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><script type="text/javascript" async="" src="PublicHostedPageLite_data/recaptcha__en.js"></script>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=9; IE=8; IE=7;">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="-1">
+  <script type="text/javascript">
+      var reCAPOnloadZuoraCallback = function() {
+    	  document.getElementById("isGAccess").setAttribute("value", "true");
+	  };
+  </script>
+  
+	  
+	  
+		  <script type="text/javascript" src="PublicHostedPageLite_data/jquery-1.js"></script>
+		  <script type="text/javascript" src="PublicHostedPageLite_data/HPM2Preload-min.js"></script>
+		  <script type="text/javascript" src="PublicHostedPageLite_data/mootools.js"></script>
+		  <script type="text/javascript">
+		    window.onload = function (){
+		    	jQuery.getScript('https://static.zuora.com/Resources/1021710/Hosted/lite2/js/HPM2Security-min.js');
+		    	jQuery.getScript('https://www.google.com/recaptcha/api.js?onload=reCAPOnloadZuoraCallback&render=explicit');
+		    };
+		  </script>
+		  
+	  
+  
+<script type="text/javascript"> 
+// Get the parent page URL as it was passed in, for browsers that don't support
+// window.postMessage (this URL could be hard-coded).
+var parent_url = decodeURIComponent(document.location.hash.replace(/^#/, ''));
+var messageReceived = false;
+ZXD.receiveMessage(function(message) {
+	var type= message.data;
+	ZLOG.debug("Received message[I]: payload=" + type);
+	if (!messageReceived) {
+		if(type.indexOf("resize")>=0){
+			//just for new version of hpm
+			messageReceived = ZLT.resizeEvent();
+		}else if(type.indexOf("postPage")>=0){
+			//just for new version of hpm
+			messageReceived = ZLT.submit();
+		}else if(type.indexOf("setInvoiceAmount")>=0){
+			var amount = pickValue(type);
+			if(document.HostedPageForm.field_invoiceAmount)
+				document.HostedPageForm.field_invoiceAmount.value=amount;
+		}else if(type.indexOf("setInvoiceNumber")>=0){
+			var number = pickValue(type);
+			if(document.HostedPageForm.field_invoiceNumber)
+				document.HostedPageForm.field_invoiceNumber.value=number;
+		} else if(type.indexOf("customizeErrorRequired")>=0){
+			jQuery("input[id='customizeErrorRequired']").val('true');
+		} else if(type.indexOf("validate")>=0){
+			var result = ZLT.validate();
+			var jsonMessage = {
+					action: 'validate',
+					success: result
+				};
+					 			
+			var message = JSON.stringify(jsonMessage);
+			
+			ZXD.postMessage(message,ZLT.parentURL(), null);
+			
+		}else if(type.indexOf("setField")>=0){
+			var field = getField(type);
+			
+			if(field=='' || validateRestrictedField(field)) {
+				return;
+			}
+			
+			var data = getData(type);
+			
+			var element = document.getElementsByName('field_'+field);
+
+			if(element) {
+				var len = element.length;
+				if(len>0){
+					for(var i=0;i<len;i++) {
+						if(element[i]) {
+							var type=element[i].type;
+							
+							if(type=='text'){
+								element[i].value=data;
+							} else if(type=='hidden'){
+								if(field=='creditCardType' && detection) {
+									enableCardType(data);
+								}else{
+								   element[i].value=data;
+								   if(field == 'style') {
+									   // after all of preopulation parameters finished, we shoud run our init logic here	
+									   reinitRequired();
+								   }
+								}
+							} else if(type=='radio') {
+								if(element[i].value == data) {
+									element[i].checked=true;
+								}
+							} else if(type=='select-one') {
+								var field= element[i];
+							    var len = field.length;
+								for(var j=0;j<len; j++) {
+									var value = field[j].value;
+									if(value == data) {
+										field[j].selected=true;
+										break;
+									}
+								}
+							}	
+						}
+					}
+				}
+			}	
+		}else if(type.indexOf("customizeErrorMessage")>=0) {
+			var customizeErrorMessage = JSON.parse(type);
+			
+			var errorbox = jQuery('#error');
+			if(customizeErrorMessage.key != 'error') {
+				// field level error message
+				var errorKey = customizeErrorMessage.key;
+				if(errorKey == 'creditCardExpirationYear') {
+					errorKey = 'creditCardExpirationMonth';
+				}
+				errorbox = jQuery("div[for='field_" + errorKey + "']");
+			}
+			
+			var errorMessage = customizeErrorMessage.message;
+			
+			ZVF.displayMessage("#@#" + errorMessage, errorbox);
+		}	
+	} else {
+		alert("Page processing in progress. Please be patient while your request loads.")
+	}
+}, 'https://github.com', 'false');
+			
+function htmlEscape(str) {
+    return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+}
+
+function validateRestrictedField(field) {
+	var restricted = ["creditCardNumber","cardSecurityCode","bankAccountNumber","creditCardExpirationYear","creditCardExpirationMonth","bankAccountName"];
+	var len = restricted.length;
+	for(var i=0;i<len;i++) {
+		if(restricted[i] == field)
+			return true;
+	}
+	return false;
+}
+			
+function pickValue(data){
+	var start = data.indexOf("(");
+	var end = data.indexOf(")");
+	if(start<0 || end<0){
+		return '';
+	}
+	var val = data.substring(start+1,end);
+	val = val.replace(" ","");
+	return val;
+}	
+
+function getField(data){
+	var start = data.indexOf("(");
+	var end = data.indexOf(")");
+	if(start<0 || end<0){
+		return '';
+	}
+	var val = data.substring(start+1,end);
+	
+	var index = val.indexOf(":");
+	
+	if(index<0) {
+		return '';
+	}
+	var field = val.substring(0,index);
+	field = field.replace(" ","");
+	return field;
+}
+
+function reinitRequired() {
+	
+	if($('input-creditCardCountry') == null || $('input-creditCardState') == null) return;
+	
+	var country = $('input-creditCardCountry').value;
+	var state = $('input-creditCardState').value;
+	
+	if(country && state) {
+		if(country == "USA"){
+			changeState("form-element-creditCardState", "creditcard-us-state", "field_creditCardState", "input-creditCardState");
+		} else if(country == "CAN"){
+		    changeState("form-element-creditCardState", "creditcard-can-state", "field_creditCardState", "input-creditCardState");
+	    }
+		
+		$('input-creditCardState').getChildren().each(function(item) {
+			if($(item).value == state) {
+				$('input-creditCardState').value = state;
+			}
+		});
+		
+	}
+}
+
+function getData(str){
+	var start = str.indexOf("(");
+	var end = str.lastIndexOf(")");
+	if(start<0 || end<0){
+		return '';
+	}
+	var val = str.substring(start+1,end);
+	
+	var index = val.indexOf(":");
+	
+	if(index<0) {
+		return '';
+	}
+	var value = val.substring(index+1,end);
+	return value;
+}
+
+function enableCardType(checkedType){
+	$(document.body).getElements("div[name='card-image-creditCardType']").each(function(item) {
+   		if(checkedType && $(item).className.indexOf("card-image-" + checkedType) > -1){
+        	if($(item).className.indexOf("card-image-" + checkedType + "-disabled") > -1){
+        		$(item).removeClass("card-image-" + checkedType + "-disabled");
+        		$(item).addClass("card-image-" + checkedType);
+        		
+               	var cardType = jQuery("input[id='input-creditCardType']");
+               	cardType.val(checkedType);
+            }
+        }else{
+           	var classes = $(item).className.split(" "), ctype;
+            for(var i = 0; i < classes.length; i++){
+            	if(classes[i].indexOf("card-image-") > -1 && classes[i].indexOf("-disabled") < 0){
+                   ctype = classes[i].substring("card-image-".length);
+                   break;
+               	}
+            }
+               
+            if(typeof(ctype) != "undefined" && $(item).className.indexOf("card-image-" + ctype + "-disabled") < 0){
+            	$(item).removeClass("card-image-" + ctype);
+        		$(item).addClass("card-image-" + ctype + "-disabled");
+           	}
+      }
+	});
+}
+
+function disableCardType(){
+	$(document.body).getElements("div[name='card-image-creditCardType']").each(function(item) {
+		var classes = $(item).className.split(" "), ctype;
+        for(var i = 0; i < classes.length; i++){
+        	if(classes[i].indexOf("card-image-") > -1 && classes[i].indexOf("-disabled") < 0){
+               ctype = classes[i].substring("card-image-".length);
+               break;
+           	}
+        }
+           
+        if(typeof(ctype) != "undefined" && $(item).className.indexOf("card-image-" + ctype + "-disabled") < 0){
+        	$(item).removeClass("card-image-" + ctype);
+    		$(item).addClass("card-image-" + ctype + "-disabled");
+       	}
+	});
+}
+
+</script><script type="text/javascript">
+window.addEvent('domready', function() {
+	//initOrChangeState("creditCard_country","creditCard","creditCardState","creditCardState");
+	if($("input-creditCardCountry") && $("input-creditCardState")){
+	  $("input-creditCardCountry").addEvent("change", function(){
+		  if(this.value === ""){
+			  changeState("form-element-creditCardState", "creditcard-text-state", "field_creditCardState", "input-creditCardState");
+		  }
+		  if(this.value == "USA"){
+			  changeState("form-element-creditCardState", "creditcard-us-state", "field_creditCardState", "input-creditCardState");
+		  }
+		  else if(this.value == "CAN"){
+		    changeState("form-element-creditCardState", "creditcard-can-state", "field_creditCardState", "input-creditCardState");
+		  }
+		  else {
+		    changeState("form-element-creditCardState", "creditcard-text-state", "field_creditCardState", "input-creditCardState");
+		  }
+		  var form = document.HostedPageForm;
+		  
+	  });
+	}
+	if($("input-achCountry") && $("input-achState")){
+		  $("input-achCountry").addEvent("change", function(){
+			  if(this.value === ""){
+				  changeState("form-element-achState", "ach-text-state", "field_achState", "input-achState");
+			  }
+			  if(this.value == "USA"){
+				  changeState("form-element-achState", "ach-us-state", "field_achState", "input-achState");
+			  }
+			  else if(this.value == "CAN"){
+			    changeState("form-element-achState", "ach-can-state", "field_achState", "input-achState");
+			  }
+			  else {
+			    changeState("form-element-achState", "ach-text-state", "field_achState", "input-achState");
+			  }
+			  var form = document.HostedPageForm;
+			  
+		  });
+		}
+	loadPrepopulationFieldValues();
+	//applyCssFieldValues();
+	//applyHtmlFieldValues();
+	//changeSupportedType();
+    
+});
+</script><script type="text/javascript">
+var validateAndSubmitPage = function() {
+	var tosubmit = true;
+	
+	  if(validateCardNumber($("input-creditCardNumber")) === true){
+	    $("input-creditCardNumber").value = $("input-creditCardNumber").value.replace(/\D+/g, "");
+	  }
+	  else {
+		  tosubmit = false;
+	  }
+	
+	if(tosubmit === true)
+	  document.HostedPageForm.submit();
+	return tosubmit;
+}
+
+var validateForm = function() {
+	
+	  if(validateCardNumber($("input-creditCardNumber"))){
+	    $("input-creditCardNumber").value = $("input-creditCardNumber").value.replace(/\D+/g, "");
+	    return true;
+	  } else {
+		return false;
+	  }
+	
+	return true;
+}
+
+function formatCardNumber(number) {
+	var isAmericanExpressCard = number.match("^(34|37)");
+	var americanExpressSpaces = [4, 10, 15];
+    var defaultSpaces = [4, 8, 12, 16];
+	var newInput;
+    if (isAmericanExpressCard) {
+      newInput = addSpaces(number, americanExpressSpaces);
+    } else {
+      newInput = addSpaces(number, defaultSpaces);
+    }
+    
+    return newInput;
+}
+
+function addSpaces(number, spaces) {
+	var parts = []
+    var j = 0;
+    for (var i=0; i<spaces.length; i++) {
+      if (number.length > spaces[i]) {
+        parts.push(number.slice(j, spaces[i]));
+        j = spaces[i];
+      } else {
+        if (i < spaces.length) {
+          parts.push(number.slice(j, spaces[i]));
+        } else {
+          parts.push(number.slice(j));
+        }
+        break;
+      }
+    }
+
+    if (parts.length > 0) {
+      return parts.join(" ");
+    } else {
+      return number;
+    }
+}
+
+function loadPrepopulationFieldValues() {
+	var form = document.HostedPageForm;
+	
+	
+    
+    ZCreditly.initialize('.text-card-number', true);
+    
+    
+}
+function applyCssFieldValues() {
+	
+}
+function applyHtmlFieldValues() {
+	
+}
+function changeSupportedType() {
+	
+}
+</script><script type="text/javascript">
+
+var validate = true;
+var detection = true;
+var disableHPMEncryption = false;
+var enableMandatePage = false;
+var isMandatePageTemplateEmpty = true;
+var reCAPWidgetId = null;
+var reCAPResponse = null;
+var thresholdExceed = false;
+var reCAPUsed = false;
+var reCAPRendered = false;
+var reCAPSiteKey = null;
+var captchaValidCallback = null;
+
+jQuery.noConflict();
+
+(function($){
+    $.fn.serializeObject = function()
+    {
+        var o = {};
+        var a = this.serializeArray();
+        $.each(a, function() {
+            if (o[this.name] !== undefined) {
+                if (!o[this.name].push) {
+                    o[this.name] = [o[this.name]];
+                }
+                o[this.name].push(this.value || '');
+            } else {
+                o[this.name] = this.value || '';
+            }
+        });
+        return o;
+    };
+})(jQuery);
+
+
+
+var ZLT = function() {
+	var pUrl, z_submit_in_process = false;
+	// PAY-7882 Save the first error field name.
+	// Used to focus on first error field after validation.
+	// It will be set null before validation, and after focusing.
+	var firstErrorFieldName = null;
+	// Used to record the submit function
+	var doSubmit = null;
+	
+    function modalLayer() {
+        return jQuery("<div id='_modalLayer' class='modalLayer'></div>");
+    }
+
+    var showMandatePage = function () {
+        jQuery(".popup").addClass("blur");
+        modalLayer().appendTo(jQuery('body'));
+        var mandatePageTmpl = jQuery("#mandate_page_popup").html();
+        var formData = jQuery("#HostedPageForm").serializeObject();
+        var dateString, dateFormat;
+        if(moment) {
+            dateFormat = jQuery("#_dateFormat").val() || 'YYYY-MM-DD';
+            dateString = moment().format(dateFormat);
+        } else {
+            dateString = new Date().toLocaleDateString();
+        }
+        formData.currentDate = dateString;
+        var renderedHTML = Mustache.render(mandatePageTmpl, formData);
+        var dialog = jQuery(renderedHTML);
+
+        function cancelDialog() {
+            dialog.remove();
+            jQuery("#_modalLayer").remove();
+            jQuery(".popup").removeClass("blur");
+            //PAY-7811 calculate HPM form height as original size
+            // and send message to host page to resize to original after cancel
+            var origHeight = jQuery("#HostedPageForm").height();
+            var origWidth = jQuery("#HostedPageForm").width();
+            ZLT.resizeEvent(origWidth, origHeight);
+        }
+
+        dialog.find(".confirmBtn").on("click", function(){
+            cancelDialog();
+            doSubmit();
+        });
+        dialog.find(".cancelBtn").on("click", cancelDialog);
+        jQuery("body").on("keyup", function(e){
+            if(e.keyCode == 27){ /*     When pressing ESC */
+                cancelDialog();
+            }
+        });
+        jQuery("body").append(dialog.addClass("mandatePage"));
+        // PAY-7811 If the form is too small, the mandate cannot be fully display
+        // need to return a proper iframe size. 
+        // Size will be send to host page to resize iframe
+        var formHeight = jQuery("#HostedPageForm").height();
+        var formWidth = jQuery("#HostedPageForm").width();
+        var mandateHeight = dialog.height();
+        if(formHeight <= mandateHeight){
+        	// mandate page CSS set Top: 10%, we also hope to leave 10% space at buttom,
+            // so multipul 1.2.
+            var newHeight = mandateHeight * 1.2;
+            // PAY-7811 if form is not large enough, send resize envent to host page to resize iframe
+            ZLT.resizeEvent(formWidth, newHeight);
+        }
+    }
+
+    var disableSubmitBtn = function() {
+        jQuery('a#submitButton').addClass("disabled");
+        z_submit_in_process = true;
+    };
+    var enableSubmitBtn = function() {
+        jQuery('a#submitButton').removeClass("disabled");
+        z_submit_in_process = false;
+    };
+
+    function checkAgreementCheckbox() {
+        var agreementCheckBox = jQuery('input.agreement_checkbox');
+        if(agreementCheckBox.length == 0) {
+            return;
+        }
+        var handler = function () {
+            var checked = agreementCheckBox.prop('checked');
+            pUrl = ZLT.parentURL();
+            if (checked) {
+                enableSubmitBtn();
+                ZXD.postMessage(JSON.stringify({
+                    'action': 'agreement_checked'
+                }), pUrl, null);
+            } else {
+                disableSubmitBtn();
+                ZXD.postMessage(JSON.stringify({
+                    'action': 'agreement_unchecked'
+                }), pUrl, null);
+            }
+        };
+        handler();
+        agreementCheckBox.on('change', handler);
+    }
+    
+    // PAY-7882 Check if the error field is the first one, if yes, save field name
+    // This field name will be used to focus on first error field after validation
+    function updateFirstErrField(errorFieldName){
+    	if(typeof firstErrorFieldName != 'undefined' && firstErrorFieldName == null){
+    		firstErrorFieldName = errorFieldName;
+    	}
+    }
+
+    return {
+    	//PAY-7882 let ourside ZLT can access this method
+    	updateFirstErrField: updateFirstErrField,
+    	
+    	close:function() {
+    		try{
+    			var jsonMessage = {
+    					action:'close'
+    			}
+    			var message = JSON.stringify(jsonMessage);
+
+    			if(pUrl) {	
+    				ZXD.postMessage(message,pUrl, null);
+    			} else {
+    				ZXD.postMessage(message,ZLT.parentURL(), null);
+    			}
+    		}catch(e) {
+    			//alert(e);
+    		}
+    	},
+    	
+    	parentURL:function() {
+    		var str = decodeURIComponent(document.location.hash.replace(/^#/, ''));
+    		var res = str.split('#');
+    		if(res[0].trim().length <= 0) {
+    			// sometimes we can not get hash, so we try to parse the hash from href.
+    			var tpurl = decodeURIComponent(document.location.href.split('&')[1]);
+    			return tpurl.split('=')[1];
+    		}
+    		
+    		return res[0];
+    	},
+    	
+		submit: function () {
+            var submitEnabled = jQuery("input[name='field_submitEnabled']")[0].value;
+            var isGAccessValue = document.getElementById("isGAccess").value;
+            var isGAccess = false;
+            if(isGAccessValue != null && isGAccessValue != 'undefined' && isGAccessValue === 'true'){
+            	isGAccess = true;
+            }
+            if(z_submit_in_process && submitEnabled) {
+                return ;
+            }
+			var messagebox = jQuery('#error');
+			messagebox.empty();
+
+			pUrl=ZLT.parentURL();//save parent url
+
+			doSubmit = function () {
+                if (submitEnabled == 'true') {
+                    z_submit_in_process = true;
+                    var encrypted = ZCRT.encrypt(false);
+                    // tag submit is processing
+                    jQuery("a[id='submitButton']").addClass("disabled");
+                    jQuery.ajax({
+                        type    : 'POST',
+                        dataType: "json",
+                        url     : 'PublicHostedPageLite.do',
+                        data    : encrypted,
+                        success : function (response) {
+                            if (response.success == 'true') {
+                            	if(response.issuerUrl != null && response.issuerUrl != 'undefined'
+                            			&& response.ThreeDSResult == 'PendingRedirect' 
+                            			&& response.AuthorizeResult == 'Pending'){
+                            		ZLT.allowScrollEvent();
+                            		window.location = response.issuerUrl;
+                            	} else{
+                            		var jresponse = JSON.stringify(response);
+                                    ZXD.postMessage(jresponse, pUrl, null);
+                            	}
+                            } else {
+                                ZVF.displayMessage('[' + response.errorCode + ']&nbsp; ' + response.errorMessage, messagebox);
+                                if(isGAccess){
+                            		// Add logic to get captcha status from response
+                            		if(response.captchaRequired == 'true' && response.captchaSiteKey != null
+                            				&& response.captchaSiteKey != 'undefined') {
+                            			thresholdExceed = true;
+                            			reCAPSiteKey = response.captchaSiteKey;
+                            		}
+                            	}
+                                jQuery("a[id='submitButton']").removeClass("disabled");
+                            }
+                        },
+                        error   : function (response) {
+                            jQuery("a[id='submitButton']").removeClass("disabled");
+                            //TODO:put a generic error here as you will not get error codes for this failure
+                            ZVF.displayMessage('[' + response.errorCode + ']&nbsp; ' + response.errorMessage, messagebox);
+                        },
+                        complete: function (response) {
+                            z_submit_in_process = false;
+                        }
+                    });
+                } else {
+                    var encrypted = ZCRT.encrypt(true);
+                    // temporary disable the input/select fields
+                    jQuery("#HostedPageForm").find('input[encrypt="true"], select[encrypt="true"]').each(function () {
+                        jQuery(this).prop("disabled", true);
+                    });
+                    jQuery("#field_style").val('iframe');
+                    
+                    // 3DS
+                    try{
+                    	var is3DSEnabledValue = document.getElementById("is3DSEnabled").value;
+                        if(is3DSEnabledValue != null && is3DSEnabledValue != 'undefined' && is3DSEnabledValue === 'true'){
+                        	ZLT.allowScrollEvent();
+                        }
+                    } catch(err){
+                		console.log(err);
+                	}
+                    
+                    jQuery("#HostedPageForm").submit();
+                    // restore the default setting and value
+                    jQuery("#field_encrypted").val('');
+                    jQuery("#HostedPageForm").find('input[encrypt="true"], select[encrypt="true"]').each(function () {
+                        jQuery(this).prop("disabled", false);
+                    });
+                }
+            }
+
+            if (ZLT.validate()) {
+                if (enableMandatePage) {
+                    if (isMandatePageTemplateEmpty) {
+                        ZVF.displayMessage("Mandate page is enabled but the template is empty.", messagebox);
+                    } else {
+                    	if(thresholdExceed){
+    	                   	ZLT.displayReCAPTCHA(showMandatePage);
+                    	} else{
+                    		// When threshold is not hit, or when Google is not accessible
+                    		// Just show mandate page
+                    		showMandatePage();
+                    	}
+	                }
+                } else {
+                	if(thresholdExceed){
+                		ZLT.displayReCAPTCHA(doSubmit);
+                	}else{
+                		// When threshold is not hit, or when Google is not accessible
+                		// Just submit request to server
+        				doSubmit();
+                	}
+                }
+            }
+        },
+        
+        
+        displayReCAPTCHA: function(callback){
+        	try{
+        		jQuery(".popup").addClass("blur");
+                modalLayer().appendTo(jQuery('body'));
+            	// if unfocus on CAPTCHA, we need to enable submit button again
+            	jQuery("#_modalLayer").click(function(){
+            		jQuery(".popup").removeClass("blur");
+            		jQuery("#_modalLayer").remove();
+            	}); 
+            	captchaValidCallback = callback;
+            	if(reCAPRendered){
+        			if(reCAPUsed){
+            			ZLT.resetReCAPTCHA();
+        			}
+        		}else{
+        			ZLT.renderReCAPTCHA();
+        		}
+            	
+        		if(reCAPWidgetId != 'undefined' && reCAPWidgetId != null){
+    				grecaptcha.execute(reCAPWidgetId);
+    				var captchaIframe = null;
+    				var newHeight = null;
+    				// Becase hard to determine when the CAPTCHA is loaded,
+    				// We use an inteval to get height. Check it every 1 sec, 20 times. 
+    				var times = 1;
+    				var loop = setInterval(function(){
+    					try{
+	    					if(times > 25){
+	    						clearInterval(loop);
+	    					}
+	    					times += 1;
+    						var form = jQuery("#HostedPageForm");
+    						captchaIframe = form[0].parentNode.getElementsByTagName('iframe')[1];
+    						if(captchaIframe != null && captchaIframe != 'undefined'
+    								&& captchaIframe.title.indexOf('challenge') >= 0){ // make sure it is not the small iframe
+    							var visible = captchaIframe.parentNode.parentNode.style.visibility;
+    							if(visible != "" && visible != 'undefined' && visible != null && visible == 'visible'){
+    								clearInterval(loop);
+    								// Use height to rezise iframe
+    								var formHeight = form.height();
+    								var formWidth = form.width();
+    								newHeight = captchaIframe.scrollHeight;
+    								if(newHeight != null && newHeight != 'undefined' && formHeight <= newHeight){
+    									newHeight = newHeight * 1.2;
+    									ZLT.resizeEvent(formWidth, newHeight);
+    								}
+    							}
+    						} 	
+    					} catch(err){
+    						clearInterval(loop);
+    						console.log(err);
+    					}
+    				}, 800);
+    			}
+        	}catch(err){
+        		console.log(err);
+        	}
+        },
+        
+    	// PAY-8451 Add reCAPTCHA for HPM2.0
+        renderReCAPTCHA : function(){
+        	if(grecaptcha != 'undefined'){
+        		reCAPWidgetId = grecaptcha.render('zuoraCaptcha', {
+	                'sitekey' : reCAPSiteKey, 'callback' : ZLT.validCAPTCHAOnServer, 'size': 'invisible'
+	              });
+        		reCAPUsed = false;
+        		reCAPRendered = true;
+        	}
+        },
+        
+        resetReCAPTCHA : function(){
+        	if(grecaptcha != 'undefined'){
+        		grecaptcha.reset(reCAPWidgetId);
+        		reCAPUsed = false;
+        	}
+        },
+        
+    	validCAPTCHAOnServer : function(response) {
+    		jQuery(".popup").removeClass("blur");
+    		jQuery("#_modalLayer").remove();
+    		var formHeight = jQuery("#HostedPageForm").height();
+    		var formwidth = jQuery("#HostedPageForm").width();
+    		ZLT.resizeEvent(formwidth, formHeight);
+    		if(captchaValidCallback != null && captchaValidCallback != 'undefined'){
+    			captchaValidCallback();
+    		}
+    		reCAPUsed = true;
+    	},
+        
+        // PAY-7882 After submit, focus on the first field that has error
+        focusOnFirstFieldError : function(messagebox){
+        	if(messagebox != null && typeof messagebox != 'undefined'){
+        		var errorfieldName = messagebox.attr('for');
+        		if(firstErrorFieldName != null && errorfieldName != null){
+        			if(firstErrorFieldName == errorfieldName || (firstErrorFieldName.indexOf("creditCardExpirationYear") >= 0 && errorfieldName.indexOf("creditCardExpirationMonth") >= 0)){
+        				var field = null;
+        				if(firstErrorFieldName == 'field_creditCardType'){
+        					field = jQuery('input#input-creditCardType');
+        				}else{
+        					field = jQuery('[name=\'' + firstErrorFieldName + '\']');
+        				}
+        				if(field != null && typeof field != 'undefined'){
+        					field.focus();
+        					// PAY-7882 After focusing, set it to null for validation of next time.
+        					firstErrorFieldName = null;
+        				}
+        			}
+        		}
+        	}
+        },
+        
+        checkAgreementCheckbox: checkAgreementCheckbox,
+    	validate : function() {
+    		// check the client validation required
+     		if(!validate) {
+    			return true;
+     		}
+    		
+    		var state = true;
+    		var isExpiredMonthEmpty = false;
+    		// PAY-7882 Use a ZLT glocal var to identify the first errorbox after this submit
+    		// Before validation start, set it to null.
+    		firstErrorFieldName = null;
+    		
+    		jQuery('div[class="form-element required"]').each(function() {
+    			
+    			var element = jQuery(this).find('input[type!="hidden"], select, radio');
+
+    			if(element) {
+    				if(element.length>1) {
+    					var index = 0;
+    					var ischecked = false;
+    					jQuery.each(element, function(i,e) {
+    						index = index + 1;
+    						var value = jQuery(e).val();
+    						var fieldName = jQuery(e).prop('name');
+    						var realFieldName = jQuery(e).prop('name');
+
+							if("field_creditCardExpirationYear" == fieldName ) {
+								//show error for creditCardMonth
+								fieldName = 'field_creditCardExpirationMonth';									
+							}
+							
+							if (jQuery(e).prop('type') == 'radio') {
+								if(!ischecked) {
+									ischecked = jQuery(e).prop('checked');
+								}
+								if(index == element.length) {
+									// validation required for the last loop
+									jQuery('div[for="' + fieldName +'"]').each(function() {
+		    							var errorbox = jQuery(this);
+		        						if(!ischecked) {
+                                            var label = jQuery('label[for="' + element.attr('id') +  '"]').text().trim();
+                                            // PAY-7882 Update first error field name for focus
+                                            updateFirstErrField(fieldName);
+                                            ZVF.displayMessage('Field not completed'.replace("#fieldName", label), errorbox);
+                                            element.parent().parent().attr("aria-invalid", true);
+			    							state = state && false;
+		        						}else {
+		        							errorbox.empty();
+		        							element.parent().parent().attr("aria-invalid", false);
+		        						}
+		    						});
+								}
+							}else{
+								jQuery('div[for="' + fieldName +'"]').each(function() {
+	    							var errorbox = jQuery(this);
+	    							if(value=='') {
+	    								if("field_creditCardExpirationMonth" == realFieldName ) {
+	    									isExpiredMonthEmpty = true;
+	    								}
+	    								// PAY-7882 Update first error field name for focus
+	    								updateFirstErrField(realFieldName);
+	    								var label = jQuery('label[for="' + element.attr('id') +  '"]').text().trim();
+                                        ZVF.displayMessage('Field not completed'.replace('#fieldName', label), errorbox);
+	    								if("field_creditCardExpirationMonth" == realFieldName){
+	    									element[0].setAttribute("aria-invalid", true);
+	    								}else if("field_creditCardExpirationYear" == realFieldName){
+	    									element[1].setAttribute("aria-invalid", true);
+	    								}else{
+	    									element.attr("aria-invalid", true);
+	    								}
+		    							state = false;
+	        						}else {
+	        							if("field_creditCardNumber"==fieldName) {
+	       									if(validate) {
+	       										flag =  ZVF.validateCardNumber();
+	       										state = state && flag;
+	       									}
+	       									if(state) {
+	    										errorbox.empty();
+	    										element.attr("aria-invalid", false);
+	    									}
+	        							}else if("field_cardSecurityCode"==fieldName) {
+       										var flag =  ZVF.validateCardSecurity();
+	        								state= state && flag;
+	        								
+	        								if(flag) {
+	    										errorbox.empty();
+	    										element.attr("aria-invalid", false);
+	    									}
+	        							} else if("field_creditCardExpirationYear"==realFieldName) {
+	        								if(!isExpiredMonthEmpty) {
+	        									errorbox.empty();
+	        								}
+	        								element[1].setAttribute("aria-invalid", false);
+	        							} else if("field_creditCardExpirationMonth"==realFieldName) {
+	        								element[0].setAttribute("aria-invalid", false);
+	        							} else {
+	        								errorbox.empty();
+	        								element.attr("aria-invalid", false);
+	        							}
+	        						}
+	    						});
+							}
+    					});
+    				} else {
+	    				var value = element.val();
+						var fieldName = jQuery(element).prop('name');
+
+   						jQuery('div[for="' + fieldName +'"]').each(function() {
+   							var errorbox = jQuery(this);
+
+   							if(value=='') {
+   								// PAY-7882 Update first error field name for focus
+   								updateFirstErrField(fieldName);
+                                var label = jQuery('label[for="' + element.attr('id') +  '"]').text().trim();
+                                ZVF.displayMessage('Field not completed'.replace('#fieldName', label), errorbox);
+                                element.attr("aria-invalid", true);
+   								state = state && false ;
+   							} else {
+   								if("field_creditCardNumber"==fieldName) {
+   									var flag = false;
+   									if(validate) {
+   										flag =  ZVF.validateCardNumber();
+   										state = state && flag;
+   									}
+   									
+   									if(flag) {
+   										errorbox.empty();
+   										element.attr("aria-invalid", false);
+   									}
+    							}else  if("field_cardSecurityCode"==fieldName){
+									var flag =  ZVF.validateCardSecurity();
+									state=state && flag;
+									if(flag) {
+										errorbox.empty();
+										element.attr("aria-invalid", false);
+									}
+								}else {
+   									errorbox.empty();
+   									element.attr("aria-invalid", false);
+    							}
+   							}
+   						});	    				
+    				}
+    			}
+    		});	
+    		
+    		//validate credit card
+    		return state;
+    	},
+		
+		// PAY-7811 Add setWidth and setHeight params to allow passing value in.
+		// It's still work if no params are passed in.
+		resizeEvent: function(setWidth, setHeight) {
+			var height=jQuery(document).height();
+			var width =jQuery(document).width();
+			
+
+			//needed for firefox
+			if(document.body.offsetHeight){
+				height= document.body.offsetHeight;
+			} else {
+				height= document.body.scrollHeight;
+			}
+			
+			// PAY-7811 only valid value are accepted
+			if(typeof setWidth != 'undefined' && setWidth != null && setWidth != '0'){
+				width = setWidth;
+			}
+			if(typeof setHeight != 'undefined' && setHeight != null && setHeight != '0'){
+				height = setHeight;
+			}
+
+			var jsonMessage = {
+					action: 'resize',
+					height: height,
+					width:width
+				};
+					 			
+			var message = JSON.stringify(jsonMessage);
+			
+			ZXD.postMessage(message,ZLT.parentURL(), null);
+		},
+		
+		allowScrollEvent: function() {
+			var jsonMessage = {
+					action: 'allowScroll'
+				};
+			var message = JSON.stringify(jsonMessage);
+			ZXD.postMessage(message,ZLT.parentURL(), null);
+		}
+    };
+}();
+
+
+var ZVF = function() {
+	var invalidCCNumMsg = "Invalid Card Number";
+	var invalidCCTypeMsg = "Invalid Card Type";
+	var invalidCVV="Invalid CVV Number";
+	var requiredFieldMsg="Field not completed";
+    var supportedTypes = new Array();
+
+    
+    supportedTypes.push("Visa");
+    
+    supportedTypes.push("MasterCard");
+    
+    supportedTypes.push("AmericanExpress");
+    
+    supportedTypes.push("Discover");
+    
+
+    var isCardTypeSupported = function (cardType) {
+        for (var i = 0; i < supportedTypes.length; i++) {
+            if (supportedTypes[i] === cardType) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+	return {
+		// just detect card type
+		detectCardType: function () {
+			try {
+				
+				var errorField = jQuery("div[for='field_creditCardNumber']");
+	
+				var card = jQuery("input[id='input-creditCardNumber']");
+	
+				var cardType = jQuery("input[id='input-creditCardType']");
+				
+				if(!cardType )
+					return false;
+				
+				var v = card.val();
+				errorField.empty();
+				card.attr("aria-invalid", false);
+				if(v==''){
+					disableCardType();
+					return '';
+				}
+				  
+				cardType.val("");
+				var errorMsg;
+
+				if((errorMsg == null || typeof errorMsg == 'undefined')) {
+					v = v.replace(/[^\d]/g, "");
+					var checkedType = isVisa(v) ? 'Visa' : (isMC(v) ? 'MasterCard'
+					      : (isAmex(v) ? 'AmericanExpress' : (isDiscover(v) ? 'Discover'
+					          : (isJCB(v) ? 'Discover' /*JCB is supported as Discover*/
+					              : (isDiners(v) ? 'Discover' /*Diners Club is supported as Discover*/: checkedType)))));
+					
+					if (!checkedType || !isCardTypeSupported(checkedType)) {
+						disableCardType();
+						errorMsg = invalidCCTypeMsg;
+					} else {
+						enableCardType(checkedType);
+					}
+					
+					// validate required
+					if (errorMsg != null && typeof errorMsg != 'undefined' && validate) {
+						// PAY-7882 Update first error field name for focus
+						ZLT.updateFirstErrField('field_creditCardNumber');
+						ZVF.displayMessage(errorMsg,errorField);
+						card.attr("aria-invalid", true);
+						return false;
+					}
+			  
+					enableCardType(checkedType);
+					cardType.val(checkedType);
+				}
+			}catch(e){
+				//alert(e);
+			}
+			return true;
+		},
+		
+		getErrorCode: function (errorMessage) {
+			var errorCode = "unknown";
+			
+			if(errorMessage == requiredFieldMsg) {
+				errorCode = "001";
+			}else if(errorMessage == invalidCCNumMsg) {
+				errorCode = "002";
+			}else if(errorMessage == invalidCCTypeMsg) {
+				errorCode = "003";
+			}else if(errorMessage == invalidCVV) {
+				errorCode = "004";
+			}
+			
+			return errorCode;
+		},
+		
+		// just validate card number
+		validateCardNumber: function () {
+			
+			try {
+				// Make sure the cart type validation error msg can be clear before next validate
+				var errorField_cardNum = jQuery("div[for='field_creditCardNumber']");
+				var errorField_cardType =jQuery("div[for='field_creditCardType']");
+				
+				var card = jQuery("input[id='input-creditCardNumber']");
+	
+				if(!card && jQuery(card).val().length <= 0)
+					return false;
+				  
+				var v = card.val();
+				// Make sure the cart type validation error msg can be clear before next validate
+				errorField_cardNum.empty();
+				errorField_cardType.empty();
+				card.attr("aria-invalid", false);
+
+				if(v==''){
+					return '';
+				}
+				
+				var errorMsg;
+				//check card number
+				if (!isCreditCard(v.replace(/ /g,""))) {
+					   errorMsg = invalidCCNumMsg;
+				}
+
+				if (errorMsg != null && typeof errorMsg != 'undefined') {
+					// PAY-7882 Update first error field name for focus
+					ZLT.updateFirstErrField('field_creditCardNumber');
+					ZVF.displayMessage(errorMsg,errorField_cardNum);
+					card.attr("aria-invalid", true);
+					return false;
+				}
+		  		
+				var cardType = jQuery("input[id='input-creditCardType']");
+				if(typeof cardType != 'undefined' && jQuery(cardType).val().length <= 0) {
+					// try to detect card type when card type is empty
+				    ZVF.detectCardType();
+					cardType = jQuery("input[id='input-creditCardType']");
+					if(typeof cardType != 'undefined' && jQuery(cardType).val().length <= 0) {
+						// PAY-7882 Update first error field name for focus
+						ZLT.updateFirstErrField('field_creditCardType');
+						ZVF.displayMessage(invalidCCTypeMsg, errorField_cardType);
+						card.attr("aria-invalid", true);
+						return false;
+					}
+				} else {
+                    if (!isCardTypeSupported(cardType.val())) {
+                    	// PAY-7882 Update first error field name for focus
+                    	ZLT.updateFirstErrField('field_creditCardType');
+                        ZVF.displayMessage(invalidCCTypeMsg, errorField_cardType);
+                        card.attr("aria-invalid", true);
+                        return false;
+                    }
+                }
+				// card.val(card.val().replace(/\D+/g, ""));
+			}catch(e){
+				//alert(e);
+			}
+			return true;
+		},
+		
+		 validateCardSecurity:function(){
+			 var errorField = jQuery("div[for='field_cardSecurityCode']");
+			 
+			var card = jQuery("input[name='field_cardSecurityCode']");
+			errorField.empty();
+			 card.attr("aria-invalid", false);
+			var v=card.val();
+			 var sec = v.replace(/\D+/g, "");
+			 var errorMsg;
+			  if (v != sec){
+				  errorMsg =invalidCVV;
+			  }
+			  if (errorMsg != null && typeof errorMsg != 'undefined') {
+					// PAY-7882 Update first error field name for focus
+					ZLT.updateFirstErrField('field_cardSecurityCode');
+					ZVF.displayMessage(errorMsg,errorField);
+					card.attr("aria-invalid", true);
+					return false;
+				}
+		return true;
+		
+		},
+		
+		
+		displayMessage:function(message, messagebox) {
+			if(message.indexOf("#@#")>=0){
+				messagebox.empty();
+				messagebox.append(message.replace("#@#", ''));
+				messagebox.fadeIn();
+				ZLT.focusOnFirstFieldError(messagebox);
+				ZLT.resizeEvent();
+			}else{
+				
+				var customizeErrorRequired = jQuery("input[id='customizeErrorRequired']").val();
+				
+				if(customizeErrorRequired == 'true') {
+					var key = messagebox.attr("id");
+					if(key != 'error') {
+						key = key.replace("error-", "");	
+					}
+					
+					var code = ZVF.getErrorCode(message);
+					var jsonMessage = {
+						action: 'customizeErrorMessage',
+						key: key,
+						code: code,
+						message: message
+					};
+							 			
+					var message = JSON.stringify(jsonMessage);
+					
+					ZXD.postMessage(message, ZLT.parentURL(), null);
+				}else{
+				    // keep the default error handling
+					messagebox.empty();
+					messagebox.append(message);
+					messagebox.fadeIn();
+					ZLT.focusOnFirstFieldError(messagebox);
+					ZLT.resizeEvent();
+				}
+			}
+		}
+
+	};
+}();
+
+
+
+var ZCRT = function() {
+	var public_key_template="-----BEGIN PUBLIC KEY-----\n$K-----END PUBLIC KEY-----";	
+
+	return {
+		certParser:function(cert) {
+			  var lines = cert.split('\n');
+			  var read = false;
+			  var b64 = false;
+			  var end = false;
+			  var flag = '';
+			  var retObj = {};
+			  retObj.info = '';
+			  retObj.salt = '';
+			  retObj.iv;
+			  retObj.b64 = '';
+			  retObj.aes = false;
+			  retObj.mode = '';
+			  retObj.bits = 0;
+			  for(var i=0; i< lines.length; i++) {
+			  	flag = lines[i].substr(0,9);
+			    if(i==1 && flag != 'Proc-Type' && flag.indexOf('M') == 0)//unencrypted cert?
+			      b64 = true;
+			    switch(flag){
+			      case '-----BEGI':
+			        read = true;
+			        break;
+			      case 'Proc-Type':
+			        if(read)
+			          retObj.info = lines[i];
+			        break;
+			      case 'DEK-Info:':
+			        if(read){
+			          var tmp = lines[i].split(',');
+			          var dek = tmp[0].split(': ');
+			          var aes = dek[1].split('-');
+			          retObj.aes = (aes[0] == 'AES')?true:false;
+			          retObj.mode = aes[2];
+			          retObj.bits = parseInt(aes[1]);
+			          retObj.salt = tmp[1].substr(0,16);
+			          retObj.iv = tmp[1];
+			        }
+			        break;
+			      case '':
+			        if(read)
+			          b64 = true;
+			        break;
+			      case '-----END ':
+			        if(read){
+			          b64 = false;
+			          read = false;
+			        }
+			      break;
+			      default:
+			        if(read && b64)
+			          retObj.b64 += pidCryptUtil.stripLineFeeds(lines[i]);
+			    }
+			  }
+			  return retObj;
+		},
+		
+		encrypt: function(iframed){
+			// Concat the encrypted fields's name
+			var encrypted_fields = "";
+			var encrypted_values = "";
+			
+			jQuery("input[encrypt='true']").each(function() {
+				encrypted_fields = encrypted_fields + "#" + jQuery(this).prop('name');
+				// remvoe extra blank space before encryption (Except bankAccountName field)
+				var fieldName = jQuery(this).prop('name');
+				if(fieldName.indexOf("bankAccountName") < 0){
+					encrypted_values = encrypted_values + "#" + jQuery(this).val().replace(/ /g,"");	
+				}else{
+					encrypted_values = encrypted_values + "#" + jQuery(this).val();
+				}
+			});
+
+			jQuery("select[encrypt='true']").each(function() {
+				encrypted_fields = encrypted_fields + "#" + jQuery(this).prop('name');
+				encrypted_values = encrypted_values + "#" + jQuery(this).val();
+			});
+
+			var encKey = jQuery("input[name='field_key']")[0].value;
+			if(encrypted_fields.length > 0) {
+				jQuery("input[id='encrypted_fields']").val(encrypted_fields);
+				if(!disableHPMEncryption) {
+					// encrypt required.
+					jQuery("input[id='encrypted_values']").val(ZCRT.encryptText(encrypted_values, encKey));
+				}else{
+					// no encrypt required.
+					jQuery("input[id='encrypted_values']").val(encrypted_values);
+				}
+			}
+			
+			if(iframed) {
+				return ;
+			}else{	
+				// Get the parameters as an array
+				var values = jQuery('#HostedPageForm').serializeArray();
+				jQuery.each(values, function( i, field ) {
+					var fieldName = field.name;
+					if(encrypted_fields.indexOf(fieldName)>-1) {
+						// scratch the encrypted fields
+						field.value = '';
+					}
+				});
+				// Convert to URL-encoded string
+				var fValues = jQuery.param(values);
+				
+				return fValues;
+			}
+		},
+		
+		encryptText: function (text,key) {
+			try{
+			   if(key) {
+				   var public_key_1024;
+				   if(key.indexOf("-----BEGIN")>-1){
+					   public_key_1024= key;
+				   }else {
+					   public_key_1024= public_key_template.replace('$K',key);
+				   }
+				
+				  /*-----------------------------------------------------------*
+				   * ENCRYPT: RSA 4098 bit                                     *
+				   *-----------------------------------------------------------*/
+				   var params = ZCRT.certParser(public_key_1024);
+				   var key = pidCryptUtil.decodeBase64(params.b64);
+				   var rsa = new pidCrypt.RSA();
+				   
+				  
+				   // ASN1 parsing
+				 	var asn = pidCrypt.ASN1.decode(pidCryptUtil.toByteArray(key));
+			
+				   var tree = asn.toHexTree();
+				   
+				   // setting the public key for encryption with retrieved ASN.1 tree
+				   rsa.setPublicKeyFromASN(tree);
+				   
+				   /*** encrypt */
+				   var crypted = rsa.encrypt(text);
+
+				   var fromHex = pidCryptUtil.encodeBase64(pidCryptUtil.convertFromHex(crypted));
+
+				   var ciphertext = pidCryptUtil.fragment(fromHex,64);
+				   //alert('$$$ '+ciphertext);		   
+				   return ciphertext;
+				}
+			}catch(e){
+				//alert(e);
+			}
+			
+			return text;
+		}
+	};
+}();
+</script><style>
+    .blur {
+        filter: blur(2px);
+        -webkit-filter: blur(2px);
+        -moz-filter: blur(2px);
+        -o-filter: blur(2px);
+        -ms-filter: blur(2px);
+    }
+    
+    .modalLayer {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background-color: #121212;
+        opacity: 0.25;
+        z-index: 20;
+        top: 0;
+    }
+</style><style>
+/* ############################ default styles ############################ */ 
+.form-label-month{
+  display: none;
+}
+
+.form-label-year{
+  display: none;
+}
+
+.form-label-input-pair{
+  display: inline-block;
+}
+
+.field-set { 
+  border: 0px; 
+  margin: 0px;
+  padding:0px;
+}
+
+.field-set-legend 
+{ 
+  display: none; 
+}
+
+.form img { vertical-align: middle; }
+
+.card-image-container {
+  float:left;
+}
+.card-image {
+  float:left;
+}
+
+
+
+
+
+
+
+.card-image-Visa {
+  background-image: url('https://static.zuora.com/Resources/1021710/Images/card-logos-3.png');
+  background-position: 0 -820px; width: 60px; height: 32px;
+  margin: 2px;
+}
+
+.card-image-Visa-disabled{
+  background-image: url('https://static.zuora.com/Resources/1021710/Images/card-logos-3.png');
+  background-position: 0 -902px; width: 60px; height: 32px; 
+  margin: 2px;
+}
+
+.card-image-text-Visa {
+  display: none;
+}
+
+
+
+
+
+
+	
+
+
+
+
+
+
+
+.card-image-MasterCard {
+   background-image: url('https://static.zuora.com/Resources/1021710/Images/card-logos-3.png');
+   background-position: 0 -656px; width: 52px; height: 32px; 
+   margin: 2px;
+}
+
+.card-image-MasterCard-disabled {
+   background-image: url('https://static.zuora.com/Resources/1021710/Images/card-logos-3.png');
+   background-position: 0 -738px; width: 52px; height: 32px;
+   margin: 2px;
+}
+.card-image-text-MasterCard {
+  display: none;
+}
+
+
+
+
+
+	
+
+
+
+
+
+
+
+
+
+.card-image-AmericanExpress {
+  background-image: url('https://static.zuora.com/Resources/1021710/Images/card-logos-3.png');
+  background-position: 0 0; width: 51px; height: 32px; 
+  margin: 2px;
+}
+.card-image-AmericanExpress-disabled {
+  background-image: url('https://static.zuora.com/Resources/1021710/Images/card-logos-3.png');
+  background-position: 0 -82px; width: 51px; height: 32px;
+  margin: 2px;
+}
+.card-image-text-AmericanExpress {
+  display: none;
+}
+
+
+
+	
+
+
+
+
+
+
+
+
+
+
+.card-image-Discover {
+  background-image: url('https://static.zuora.com/Resources/1021710/Images/card-logos-3.png');
+  background-position: 0 -328px; width: 51px; height: 32px; 
+  margin: 2px;
+}
+.card-image-Discover-disabled {
+  background-image: url('https://static.zuora.com/Resources/1021710/Images/card-logos-3.png');
+  background-position: 0 -410px; width: 51px; height: 32px;
+  margin: 2px;
+}
+.card-image-text-Discover {
+  display: none;
+}
+
+
+	
+
+/* ############################ field styles ############################ */ 
+.field-row { }
+.field-row-cell { }
+.text-input { width: 210px; }
+.text-input-cvv { width: 100px;}
+.radio-input { }
+.select-input {width:105px; }
+.state-select-input { width:215px; }
+</style><style>
+/* Override Zuora defaults */
+* {
+  box-sizing: border-box;
+}
+.content {
+  padding-bottom: 16px;
+  padding-left: 16px;
+}
+.form-element {
+  padding: 0 !important;
+  min-width: auto !important;
+}
+.form-element.required {
+  border: 0 !important;
+}
+.text-card-number,
+#form-element-creditCardType {
+  width: 288px;
+}
+label#form-label-creditCardType {
+  display: none !important;
+}
+#form-element-creditCardType {
+  position: relative;
+  top: 38px;
+}
+.card-image[class*="disabled"] {
+  display: none;
+}
+.card-image {
+  position: absolute;
+  right: 0;
+  top: -10px;
+  width: 38px;
+  height: 21px;
+  margin: 6px;
+  background-size: 100%;
+}
+.card-image-Visa {
+  background-position: 0px -519px;
+}
+.card-image-MasterCard {
+  background-position: 4px -1007px;
+}
+.card-image-AmericanExpress {
+  background-position: 4px -592px;
+}
+.card-image-Discover {
+  background-position: 4px -208px;
+}
+
+.creditcard-text-state {
+  display: none;
+}
+#form-group-creditCardExpirationMonth {
+  float: left;
+  width: 308px;
+}
+#form-group-cardSecurityCode {
+  float: left;
+  clear: right;
+}
+#form-group-creditCardCountry {
+  float: left;
+  clear: left;
+  width: 308px;
+}
+#form-group-creditCardState {
+  float: left;
+  clear: right;
+  width: 146px;
+}
+
+#input-creditCardExpirationMonth,
+#input-creditCardExpirationYear {
+  width: 138px;
+  margin-right: 0;
+}
+
+#form-group-creditCardPostalCode {
+  clear: both;
+}
+
+#input-creditCardPostalCode {
+  width: 138px;
+}
+
+/* Disappear the name */
+#form-group-creditCardHolderName {
+  display:none;
+}
+/* Primer styles */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  font-size: 14px;
+  line-height: 1.5;
+  color: #24292e;
+  background-color: #fff;
+  margin: 0;
+}
+input,
+select {
+  min-height: 34px;
+  padding: 6px 8px;
+  font-size: 14px;
+  line-height: 20px;
+  color: #24292e;
+  vertical-align: middle;
+  background-color: #fff;
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  border: 1px solid #d1d5da;
+  border-radius: 3px;
+  outline: none;
+  box-shadow: inset 0 1px 2px rgba(27,31,35,0.075);
+  max-width: 100%;
+  margin-right: 5px;
+  background-color: #fafbfc;
+}
+select {
+  display: inline-block;
+  max-width: 100%;
+  height: 34px;
+  padding-right: 24px;
+  padding-right: 8px \9;
+  background: #fff url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAUCAMAAACzvE1FAAAADFBMVEUzMzMzMzMzMzMzMzMKAG/3AAAAA3RSTlMAf4C/aSLHAAAAPElEQVR42q3NMQ4AIAgEQTn//2cLdRKppSGzBYwzVXvznNWs8C58CiussPJj8h6NwgorrKRdTvuV9v16Afn0AYFOB7aYAAAAAElFTkSuQmCC") no-repeat right 8px center;
+  background-size: auto auto;
+  background-image: none \9;
+  background-size: 8px 10px;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+input:focus {
+  border-color: #2188ff;
+  box-shadow: inset 0 1px 2px rgba(27,31,35,0.075), 0 0 0 0.2em rgba(3,102,214,0.3);
+}
+.text-input-cvv {
+   width: 96px !important;
+}
+.required-desc {
+   display: none !important;
+}
+.state-select-input {
+    width: 288px !important;
+}
+input:focus {
+  background-color: #fff;
+}
+label {
+  display: block;
+  vertical-align: middle;
+  width: 100%;
+  color: #24292e;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 21px;
+  box-sizing: border-box;
+  margin: 0 0 6px;
+}
+.invalid {
+  border: 1px solid #ED1C24;
+}
+.form img {
+  vertical-align: middle;
+}
+.form-group {
+  margin-bottom: 15px;
+}
+.form-group .error {
+  margin: 4px 0 5px 140px;
+}
+.popup {
+  background-color: #FFF;
+}
+.popup .form {
+  margin-top: 1px;
+  padding: 0;
+  width: 100%;
+  -webkit-border-radius: 8px;
+  -moz-border-radius: 8px;
+  border-radius:8px;
+}
+.popup .form h2 {
+  padding: 10px 17px;
+  margin:0 auto;
+  margin-top: 1px;
+  background-color: #EDEDED;
+  border-bottom: 1px solid #d5d5d5;
+}
+.whitespace {
+  padding: 6px 0;
+  border-bottom: 0px;
+}
+.popup .form h3 {
+  padding: 10px 25px;
+  margin-top: 0;
+  border-bottom: 0px;
+}
+a {
+  text-decoration:none;
+}
+a.modalCloseImg {
+  background: url(Images/hpm/icon-close.gif) no-repeat;
+  width: 7px;
+  height: 7px;
+  display: inline;
+  z-index: 3200;
+  position: absolute;
+  top: 13px;
+  right: 13px;
+  cursor: pointer;
+}
+.error {
+  font-size: 12px;
+  color: #ED1C24;
+  margin: -8px 0 5px 0;
+}
+
+.error-field {
+position: relative;
+z-index: 10;
+display: inline-block;
+max-width: 450px;
+padding: 5px 8px;
+margin: 4px 0 0;
+font-size: 13px;
+font-weight: 400;
+border-style: solid;
+border-width: 1px;
+border-radius: 3px;
+color: #86181d;
+background-color: #ffdce0;
+border-color: #cea0a5;
+}
+
+.error-field:empty {
+  display: none;
+}
+
+.error-field::before {
+  position: absolute;
+  bottom: 100%;
+  left: 10px;
+  z-index: 15;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  content: " ";
+  border: solid transparent;
+  border-bottom-color: #cea0a5;
+  margin-left: -1px;
+  border-width: 6px;
+}
+
+.error-field::after {
+  position: absolute;
+  bottom: 100%;
+  left: 10px;
+  z-index: 15;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  content: " ";
+  border: solid transparent;
+  border-bottom-color: #ffdce0;
+  border-width: 5px;
+}
+
+.date-separator{
+  font-size: 12px;
+}
+.bottom {
+  overflow: hidden;
+}
+.popup .form .desc {
+  margin-left: 25px;
+  margin-right: 37px;
+}
+.tooltip-text{
+  font-size: 12px;
+}
+a.tooltip{
+  display:none;
+}
+.image-cvv{
+    cursor: pointer;
+    top: -3px;
+}
+.image-cvv-position{
+position: relative;
+}
+.image-cvv-des {
+    position: absolute;
+    top: 38px;
+    left: -87px;
+    z-index: 20;
+    border: 1px solid rgb(232, 232, 232);
+}
+.btn-submit {
+  position: relative;
+  display: inline-block;
+  padding: 6px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  white-space: nowrap;
+  vertical-align: middle;
+  cursor: pointer;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  background-repeat: repeat-x;
+  background-position: -1px -1px;
+  background-size: 110% 110%;
+  border: 1px solid rgba(27,31,35,0.2);
+  border-radius: 0.25em;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  color: #fff;
+  background-color: #28a745;
+  background-image: linear-gradient(-180deg, #34d058 0%, #28a745 90%);
+}
+.btn-submit:hover {
+  background-color: #269f42;
+  background-image: linear-gradient(-180deg, #2fcb53 0%, #269f42 90%);
+  background-position: 0 -0.5em;
+  border-color: rgba(27,31,35,0.5);
+}
+.btn-submit:active {
+  background-color: #279f43;
+  background-image: none;
+  border-color: rgba(27,31,35,0.5);
+  box-shadow: inset 0 0.15em 0.3em rgba(27,31,35,0.15);
+}
+
+.btn-submit:disabled, .btn-submit.disabled {
+  color: rgba(255,255,255,0.75);
+  background-color: #94d3a2;
+  background-image: none;
+  border-color: rgba(27,31,35,0.2);
+  box-shadow: none;
+}
+</style></head>
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+  
+    
+
+  
+  
+
+<body>
+<!--  DEBUG Page: Dotcom SelfServe Billing Settings Page -->
+<input type="hidden" id="_dateFormat" value="">
+<form action="PublicHostedPageLite.do" id="HostedPageForm" name="HostedPageForm" method="post">
+  <input type="hidden" name="method" value="submitPage">
+  <input type="hidden" name="id" value="2c92a0fd6205707201620c1f8aad4512">
+  <input type="hidden" name="tenantId" value="6362">
+  <input type="hidden" name="token" value="zlIgLAfldqMVq6n8gusvSihzHDkLBlB1">
+  <input type="hidden" name="signature" value="X/Umun/5PJjXXT6JB/xgBDFABju4yW4dl3rPGEKXn8q0k8FSVulu4sMbdBovOVtpBd8C41T0MHegrxUNR5pes0AfWLdsXABivCME4wJbzOuOz1Y/WEln2lsfS4xgM/ZTTJp8vodkR2Wp1lzU9gHgkMKEmFaaM/LuYMYmvalnMAv+Pl4ZAvxJcctc/Se/1fAbAr8ySNaNS7yEyc9lOQz65mC5vsK2eaI49jyaXLpcCU4dp0WxXn9+zhQL9F8yywlyQbj/x73guI0mq71u6dqovVsbZmDDbgpi6msLXdQbHskVXLM+7oRHT2Zogq5BAtLCJN4Hj1FumbastskfT+WOWg==">
+  <input type="hidden" name="paymentGateway" value="">
+  <input type="hidden" name="field_authorizationAmount" value="">
+  <input type="hidden" name="field_currency" value="">
+  <input type="hidden" name="field_key" value="MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4asjLqOYk2hamXHbL5bN2sfevjJvlnmIj0FToJQA7pNQRYIrKDMuQhKfFJqNF5q9SKA5+f6mV4WCyc4FU7s8xw1IZMtpgo99Im8UKsJQE+iAIGRy1hr2VYUAJaW5yseqqh5dWlT8tQiI9M8uKg+QsRCMufR4muTYeFwYV+1PQn+2XKYXeQd2ctv8mGGSZk35dzbFSMfgMXNzlyHBAcyRtSViNTrqLjwvdy7+zM2sbcdKjgHOpMnU9IO1f60symkxitD9VJljiJzY3TXHdsP0bk4AAvwogsvXYUBCMssetF2SxlURHwkBnz0zdamiair9zqGrh78Z+AXe0zhFeasFNwIDAQAB">
+  <input type="hidden" name="field_style" id="field_style" value="inline">
+  <input type="hidden" name="field_submitEnabled" value="true">
+  <input type="hidden" name="field_signatureType" value="">
+  <input type="hidden" name="host" value="https://github.com/new">
+  <input type="hidden" name="encrypted_fields" id="encrypted_fields" value="">
+  <input type="hidden" name="encrypted_values" id="encrypted_values" value="">
+  <input type="hidden" name="customizeErrorRequired" id="customizeErrorRequired" value="true">
+  <input type="hidden" name="fromHostedPage" id="fromHostedPage" value="true">
+  <input type="hidden" name="isGAccess" id="isGAccess" value="true">
+  <input type="hidden" name="is3DSEnabled" id="is3DSEnabled" value="">
+  
+  
+  
+    <input type="hidden" name="field_passthrough1">
+  
+    <input type="hidden" name="field_passthrough2">
+  
+    <input type="hidden" name="field_passthrough3">
+  
+    <input type="hidden" name="field_passthrough4">
+  
+    <input type="hidden" name="field_passthrough5">
+  
+
+  <div class="popup">  
+	<div class="form">
+		<!--  Page Title -->
+	  
+	  
+	  	
+	  
+	  	
+		  
+		  
+		  	<div class="whitespace"></div>
+		  
+	  
+	  
+	  
+	  <!--  Page Description -->
+	  
+	  	
+
+	
+	 <!-- content section -->	
+     <div class="content">
+	    <!--  error section -->
+	    <div id="error" class="error" role="alert" aria-live="assertive"></div>
+ 	    <div class="spacer"></div>
+ 	  
+  
+      
+      
+      	<input id="input-accountId" type="hidden" value="" name="field_accountId" encrypt="false">
+      
+ 	
+      
+      
+      	<input id="input-gatewayName" type="hidden" value="" name="field_gatewayName" encrypt="false">
+      
+ 	
+      
+      
+      	<input id="input-deviceSessionId" type="hidden" value="" name="field_deviceSessionId" encrypt="false">
+      
+ 	
+      
+      
+      	<input id="input-ipAddress" type="hidden" value="" name="field_ipAddress" encrypt="true">
+      
+ 	
+      
+      
+      	<input id="input-useDefaultRetryRule" type="hidden" value="" name="field_useDefaultRetryRule" encrypt="false">
+      
+ 	
+      
+      
+      	<input id="input-paymentRetryWindow" type="hidden" value="" name="field_paymentRetryWindow" encrypt="false">
+      
+ 	
+      
+      
+      	<input id="input-maxConsecutivePaymentFailures" type="hidden" value="" name="field_maxConsecutivePaymentFailures" encrypt="false">
+      
+ 	
+      
+          
+        <div class="form-group" id="form-group-creditCardType">
+		  	
+			  	
+                
+	            
+		            <label class="form-label" id="form-label-creditCardType" for="input-creditCardType">
+		           		Card Type	
+		            </label>
+	         	    <div class="form-element" id="form-element-creditCardType">
+	         	    	
+
+
+
+     
+		
+              
+                  
+                    
+                     
+			          <div id="card-image-container-Visa" role="widget" aria-live="polite" name="card-image-creditCardType" class="card-image-Visa-disabled card-image " aria-selected="false" aria-hidden="true" aria-disabled="true">
+			              <span id="card-image-text-Visa" class="card-image-text-Visa">
+			                Visa 
+			              </span>
+			           </div>
+			          
+                      
+                    
+                  
+                    
+                     
+			          <div id="card-image-container-MasterCard" role="widget" aria-live="polite" name="card-image-creditCardType" class="card-image-MasterCard-disabled card-image " aria-selected="false" aria-hidden="true" aria-disabled="true">
+			              <span id="card-image-text-MasterCard" class="card-image-text-MasterCard">
+			                MasterCard 
+			              </span>
+			           </div>
+			          
+                      
+                    
+                  
+                    
+                     
+			          <div id="card-image-container-AmericanExpress" role="widget" aria-live="polite" name="card-image-creditCardType" class="card-image-AmericanExpress-disabled card-image " aria-selected="false" aria-hidden="true" aria-disabled="true">
+			              <span id="card-image-text-AmericanExpress" class="card-image-text-AmericanExpress">
+			                AmericanExpress 
+			              </span>
+			           </div>
+			          
+                      
+                    
+                  
+                    
+                     
+			          <div id="card-image-container-Discover" role="widget" aria-live="polite" name="card-image-creditCardType" class="card-image-Discover-disabled card-image " aria-selected="false" aria-hidden="true" aria-disabled="true">
+			              <span id="card-image-text-Discover" class="card-image-text-Discover">
+			                Discover 
+			              </span>
+			           </div>
+			          
+                      
+                    
+                  
+                    
+                      <input type="hidden" id="input-creditCardType" name="field_creditCardType" aria-live="polite" value="">  
+                    
+              
+              
+              
+              
+							
+							
+							
+							
+              
+							
+							
+							
+							
+							
+              
+							
+							
+							
+							
+							
+							
+						
+              
+							
+							
+							
+							
+							
+							
+              
+              
+              
+            
+            
+						
+						
+
+	         	    </div>
+	         	    <a class="tooltip" id="tooltip-creditCardType" href="#">
+						<span class="tooltip-text" id="tooltip-text-creditCardType"></span>
+					</a>
+		 			<div id="error-creditCardType" for="field_creditCardType" class="error-field"></div>
+	            
+            
+	 </div>
+	      
+      
+      
+ 	
+      
+          
+        <div class="form-group" id="form-group-creditCardNumber">
+		  	
+			  	
+	                <label class="form-label required" id="form-label-creditCardNumber" for="input-creditCardNumber">
+		           		Card Number	
+		            </label>
+	                
+	                <div class="form-element required" id="form-element-creditCardNumber">
+	                	
+
+
+
+     
+		
+              
+              
+                <input type="text" id="input-creditCardNumber" class="text-input text-card-number" name="field_creditCardNumber" maxlength="32" encrypt="true" aria-required="true" aria-describedby="error-creditCardNumber" style="background-image: url(&quot;data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGP6zwAAAgcBApocMXEAAAAASUVORK5CYII=&quot;);">
+              
+              
+              
+							
+							
+							
+							
+              
+							
+							
+							
+							
+							
+              
+							
+							
+							
+							
+							
+							
+						
+              
+							
+							
+							
+							
+							
+							
+              
+              
+              
+            
+            
+						
+						
+
+	                </div>
+	                <a class="tooltip" id="tooltip-creditCardNumber" href="#">
+						<span class="tooltip-text" id="tooltip-text-creditCardNumber"></span>
+					</a>
+		 			<div id="error-creditCardNumber" for="field_creditCardNumber" class="error-field"></div>
+	            
+                
+	            
+            
+	 </div>
+	      
+      
+      
+ 	
+      
+             
+      
+      
+ 	
+      
+          
+        <div class="form-group" id="form-group-creditCardExpirationMonth">
+		  	
+			  	
+	                <label class="form-label required" id="form-label-creditCardExpirationMonth" for="input-creditCardExpirationMonth">
+		           		Expiration Date	
+		            </label>
+	                
+	                <div class="form-element required" id="form-element-creditCardExpirationMonth">
+	                	
+
+
+
+     
+		
+              
+              
+              
+              
+							
+							  <fieldset class="field-set">
+								    <legend class="field-set-legend">Expiration date*</legend>
+									
+									
+									<div class="form-label-input-pair">
+										<label class="form-label form-label-month" for="input-creditCardExpirationMonth">
+								    		Month
+								    	</label>
+								    
+										<select encrypt="true" class="select-input " id="input-creditCardExpirationMonth" name="field_creditCardExpirationMonth" aria-required="true" aria-describedby="error-creditCardExpirationMonth">
+											
+											<option value="" selected="selected">
+													
+														
+														
+															- Select One -	
+														
+													
+											</option>
+			
+											  
+											  <option value="01">
+											  	01
+											  </option>
+			
+											  
+											  <option value="02">
+											  	02
+											  </option>
+			
+											  
+											  <option value="03">
+											  	03
+											  </option>
+			
+											  
+											  <option value="04">
+											  	04
+											  </option>
+			
+											  
+											  <option value="05">
+											  	05
+											  </option>
+			
+											  
+											  <option value="06">
+											  	06
+											  </option>
+			
+											  
+											  <option value="07">
+											  	07
+											  </option>
+			
+											  
+											  <option value="08">
+											  	08
+											  </option>
+			
+											  
+											  <option value="09">
+											  	09
+											  </option>
+			
+											  
+											  <option value="10">
+											  	10
+											  </option>
+			
+											  
+											  <option value="11">
+											  	11
+											  </option>
+			
+											  
+											  <option value="12">
+											  	12
+											  </option>
+												
+										</select> 
+									</div>
+									<span id="date-separator" class="date-separator">/</span>
+									<div class="form-label-input-pair">
+										<label class="form-label form-label-year" for="input-creditCardExpirationYear">
+									    	Year
+									    </label>
+										<select encrypt="true" class="select-input " id="input-creditCardExpirationYear" name="field_creditCardExpirationYear" aria-required="true" aria-describedby="error-creditCardExpirationMonth">
+											
+											<option value="" selected="selected">
+													
+														
+														
+															- Select One -	
+														
+													
+											</option>
+			
+											  
+											  <option value="2018">
+											  	2018
+											  </option>
+			
+											  
+											  <option value="2019">
+											  	2019
+											  </option>
+			
+											  
+											  <option value="2020">
+											  	2020
+											  </option>
+			
+											  
+											  <option value="2021">
+											  	2021
+											  </option>
+			
+											  
+											  <option value="2022">
+											  	2022
+											  </option>
+			
+											  
+											  <option value="2023">
+											  	2023
+											  </option>
+			
+											  
+											  <option value="2024">
+											  	2024
+											  </option>
+			
+											  
+											  <option value="2025">
+											  	2025
+											  </option>
+			
+											  
+											  <option value="2026">
+											  	2026
+											  </option>
+			
+											  
+											  <option value="2027">
+											  	2027
+											  </option>
+			
+											  
+											  <option value="2028">
+											  	2028
+											  </option>
+			
+											  
+											  <option value="2029">
+											  	2029
+											  </option>
+			
+											  
+											  <option value="2030">
+											  	2030
+											  </option>
+			
+											  
+											  <option value="2031">
+											  	2031
+											  </option>
+			
+											  
+											  <option value="2032">
+											  	2032
+											  </option>
+			
+											  
+											  <option value="2033">
+											  	2033
+											  </option>
+			
+											  
+											  <option value="2034">
+											  	2034
+											  </option>
+			
+											  
+											  <option value="2035">
+											  	2035
+											  </option>
+			
+											  
+											  <option value="2036">
+											  	2036
+											  </option>
+			
+											  
+											  <option value="2037">
+											  	2037
+											  </option>
+			
+											  
+											  <option value="2038">
+											  	2038
+											  </option>
+																																	
+										</select>
+									</div>
+							  </fieldset>
+							
+							
+							
+							
+              
+							
+							
+							
+							
+							
+              
+							
+							
+							
+							
+							
+							
+						
+              
+							
+							
+							
+							
+							
+							
+              
+              
+              
+            
+            
+						
+						
+
+	                </div>
+	                <a class="tooltip" id="tooltip-creditCardExpirationMonth" href="#">
+						<span class="tooltip-text" id="tooltip-text-creditCardExpirationMonth"></span>
+					</a>
+		 			<div id="error-creditCardExpirationMonth" for="field_creditCardExpirationMonth" class="error-field"></div>
+	            
+                
+	            
+            
+	 </div>
+	      
+      
+      
+ 	
+      
+          
+        <div class="form-group" id="form-group-cardSecurityCode">
+		  	
+			  	
+	                <label class="form-label required" id="form-label-cardSecurityCode" for="input-cardSecurityCode">
+		           		CVV	
+		            </label>
+	                
+	                <div class="form-element required" id="form-element-cardSecurityCode">
+	                	
+
+
+
+     
+		
+              
+              
+              
+              
+							
+							
+							
+							
+							
+              
+							
+							
+							
+							
+							
+              
+							
+							
+							
+							
+							
+							
+						
+              
+							
+							
+							
+							
+							
+							
+              
+              
+              
+            
+            
+						
+						
+						  	<div id="cvvPosition" class="image-cvv-position">
+						  		<input id="input-cardSecurityCode" encrypt="true" type="text" class="text-input-cvv" name="field_cardSecurityCode" maxlength="4" aria-describedby="error-cardSecurityCode">&nbsp;
+								
+								  	
+									
+										<img src="PublicHostedPageLite_data/cvv_logo.png" alt="cvv" class="image-cvv" onmouseover="document.getElementById('vvDes').style.display = '';" onmouseout="document.getElementById('vvDes').style.display = 'none';">
+										<div id="vvDes" class="image-cvv-des" style="display:none">
+				                        	<img alt="preview" src="PublicHostedPageLite_data/cvv_preview_2.jpg">
+				                        </div>
+		                        	
+							  		
+	                      	</div>	                      	
+						
+
+	                </div>
+	                <a class="tooltip" id="tooltip-cardSecurityCode" href="#">
+						<span class="tooltip-text" id="tooltip-text-cardSecurityCode"></span>
+					</a>
+		 			<div id="error-cardSecurityCode" for="field_cardSecurityCode" class="error-field"></div>
+	            
+                
+	            
+            
+	 </div>
+	      
+      
+      
+ 	
+      
+          
+        <div class="form-group" id="form-group-creditCardHolderName">
+		  	
+			  	
+                
+	            
+		            <label class="form-label" id="form-label-creditCardHolderName" for="input-creditCardHolderName">
+		           		Cardholder Name	
+		            </label>
+	         	    <div class="form-element" id="form-element-creditCardHolderName">
+	         	    	
+
+
+
+     
+		
+              
+              
+              
+              
+							
+							
+							
+							
+              
+							
+							
+							
+							
+							
+              
+							
+							
+							
+							
+							
+							
+						
+              
+							
+							
+							
+							
+							
+							
+              
+              
+              
+                
+                
+                
+                <input type="text" id="input-creditCardHolderName" value="25312848" class="text-input" name="field_creditCardHolderName" maxlength="50" encrypt="false" aria-describedby="error-creditCardHolderName">
+                
+                
+              
+            
+            
+						
+						
+
+	         	    </div>
+	         	    <a class="tooltip" id="tooltip-creditCardHolderName" href="#">
+						<span class="tooltip-text" id="tooltip-text-creditCardHolderName"></span>
+					</a>
+		 			<div id="error-creditCardHolderName" for="field_creditCardHolderName" class="error-field"></div>
+	            
+            
+	 </div>
+	      
+      
+      
+ 	
+      
+          
+        <div class="form-group" id="form-group-creditCardCountry">
+		  	
+			  	
+	                <label class="form-label required" id="form-label-creditCardCountry" for="input-creditCardCountry">
+		           		Country	
+		            </label>
+	                
+	                <div class="form-element required" id="form-element-creditCardCountry">
+	                	
+
+
+
+     
+		
+              
+              
+              
+              
+							
+							
+							
+								<select encrypt="false" id="input-creditCardCountry" class="state-select-input " name="field_creditCardCountry" aria-required="true" aria-describedby="error-creditCardCountry">
+									
+									<option value="" selected="selected">
+											
+											
+												- Select One -	
+											
+									</option>
+									
+										<option value="AFG">
+											Afghanistan
+										</option>
+									
+										<option value="ALA">
+											Aland Islands
+										</option>
+									
+										<option value="ALB">
+											Albania
+										</option>
+									
+										<option value="DZA">
+											Algeria
+										</option>
+									
+										<option value="ASM">
+											American Samoa
+										</option>
+									
+										<option value="AND">
+											Andorra
+										</option>
+									
+										<option value="AGO">
+											Angola
+										</option>
+									
+										<option value="AIA">
+											Anguilla
+										</option>
+									
+										<option value="ATA">
+											Antarctica
+										</option>
+									
+										<option value="ATG">
+											Antigua And Barbuda
+										</option>
+									
+										<option value="ARG">
+											Argentina
+										</option>
+									
+										<option value="ARM">
+											Armenia
+										</option>
+									
+										<option value="ABW">
+											Aruba
+										</option>
+									
+										<option value="AUS">
+											Australia
+										</option>
+									
+										<option value="AUT">
+											Austria
+										</option>
+									
+										<option value="AZE">
+											Azerbaijan
+										</option>
+									
+										<option value="BHS">
+											Bahamas
+										</option>
+									
+										<option value="BHR">
+											Bahrain
+										</option>
+									
+										<option value="BGD">
+											Bangladesh
+										</option>
+									
+										<option value="BRB">
+											Barbados
+										</option>
+									
+										<option value="BLR">
+											Belarus
+										</option>
+									
+										<option value="BEL">
+											Belgium
+										</option>
+									
+										<option value="BLZ">
+											Belize
+										</option>
+									
+										<option value="BEN">
+											Benin
+										</option>
+									
+										<option value="BMU">
+											Bermuda
+										</option>
+									
+										<option value="BTN">
+											Bhutan
+										</option>
+									
+										<option value="BOL">
+											Bolivia
+										</option>
+									
+										<option value="BES">
+											Bonaire, Saint Eustatius and Saba
+										</option>
+									
+										<option value="BIH">
+											Bosnia and Herzegovina
+										</option>
+									
+										<option value="BWA">
+											Botswana
+										</option>
+									
+										<option value="BVT">
+											Bouvet Island
+										</option>
+									
+										<option value="BRA">
+											Brazil
+										</option>
+									
+										<option value="IOT">
+											British Indian Ocean Territory
+										</option>
+									
+										<option value="BRN">
+											Brunei Darussalam
+										</option>
+									
+										<option value="BGR">
+											Bulgaria
+										</option>
+									
+										<option value="BFA">
+											Burkina Faso
+										</option>
+									
+										<option value="BDI">
+											Burundi
+										</option>
+									
+										<option value="KHM">
+											Cambodia
+										</option>
+									
+										<option value="CMR">
+											Cameroon
+										</option>
+									
+										<option value="CAN">
+											Canada
+										</option>
+									
+										<option value="CPV">
+											Cape Verde
+										</option>
+									
+										<option value="CYM">
+											Cayman Islands
+										</option>
+									
+										<option value="CAF">
+											Central African Republic
+										</option>
+									
+										<option value="TCD">
+											Chad
+										</option>
+									
+										<option value="CHL">
+											Chile
+										</option>
+									
+										<option value="CHN">
+											China
+										</option>
+									
+										<option value="CXR">
+											Christmas Island
+										</option>
+									
+										<option value="CCK">
+											Cocos (Keeling) Islands
+										</option>
+									
+										<option value="COL">
+											Colombia
+										</option>
+									
+										<option value="COM">
+											Comoros
+										</option>
+									
+										<option value="COG">
+											Congo
+										</option>
+									
+										<option value="COD">
+											Congo, the Democratic Republic of the
+										</option>
+									
+										<option value="COK">
+											Cook Islands
+										</option>
+									
+										<option value="CRI">
+											Costa Rica
+										</option>
+									
+										<option value="CIV">
+											Cote d'Ivoire
+										</option>
+									
+										<option value="HRV">
+											Croatia
+										</option>
+									
+										<option value="CUB">
+											Cuba
+										</option>
+									
+										<option value="CUW">
+											Curacao
+										</option>
+									
+										<option value="CYP">
+											Cyprus
+										</option>
+									
+										<option value="CZE">
+											Czech Republic
+										</option>
+									
+										<option value="DNK">
+											Denmark
+										</option>
+									
+										<option value="DJI">
+											Djibouti
+										</option>
+									
+										<option value="DMA">
+											Dominica
+										</option>
+									
+										<option value="DOM">
+											Dominican Republic
+										</option>
+									
+										<option value="ECU">
+											Ecuador
+										</option>
+									
+										<option value="EGY">
+											Egypt
+										</option>
+									
+										<option value="SLV">
+											El Salvador
+										</option>
+									
+										<option value="GNQ">
+											Equatorial Guinea
+										</option>
+									
+										<option value="ERI">
+											Eritrea
+										</option>
+									
+										<option value="EST">
+											Estonia
+										</option>
+									
+										<option value="ETH">
+											Ethiopia
+										</option>
+									
+										<option value="FLK">
+											Falkland Islands (Malvinas)
+										</option>
+									
+										<option value="FRO">
+											Faroe Islands
+										</option>
+									
+										<option value="FJI">
+											Fiji
+										</option>
+									
+										<option value="FIN">
+											Finland
+										</option>
+									
+										<option value="FRA">
+											France
+										</option>
+									
+										<option value="GUF">
+											French Guiana
+										</option>
+									
+										<option value="PYF">
+											French Polynesia
+										</option>
+									
+										<option value="ATF">
+											French Southern Territories
+										</option>
+									
+										<option value="GAB">
+											Gabon
+										</option>
+									
+										<option value="GMB">
+											Gambia
+										</option>
+									
+										<option value="GEO">
+											Georgia
+										</option>
+									
+										<option value="DEU">
+											Germany
+										</option>
+									
+										<option value="GHA">
+											Ghana
+										</option>
+									
+										<option value="GIB">
+											Gibraltar
+										</option>
+									
+										<option value="GRC">
+											Greece
+										</option>
+									
+										<option value="GRL">
+											Greenland
+										</option>
+									
+										<option value="GRD">
+											Grenada
+										</option>
+									
+										<option value="GLP">
+											Guadeloupe
+										</option>
+									
+										<option value="GUM">
+											Guam
+										</option>
+									
+										<option value="GTM">
+											Guatemala
+										</option>
+									
+										<option value="GGY">
+											Guernsey
+										</option>
+									
+										<option value="GIN">
+											Guinea
+										</option>
+									
+										<option value="GNB">
+											Guinea-Bissau
+										</option>
+									
+										<option value="GUY">
+											Guyana
+										</option>
+									
+										<option value="HTI">
+											Haiti
+										</option>
+									
+										<option value="HMD">
+											Heard Island and McDonald Islands
+										</option>
+									
+										<option value="VAT">
+											Holy See (Vatican City State)
+										</option>
+									
+										<option value="HND">
+											Honduras
+										</option>
+									
+										<option value="HKG">
+											Hong Kong
+										</option>
+									
+										<option value="HUN">
+											Hungary
+										</option>
+									
+										<option value="ISL">
+											Iceland
+										</option>
+									
+										<option value="IND">
+											India
+										</option>
+									
+										<option value="IDN">
+											Indonesia
+										</option>
+									
+										<option value="IRN">
+											Iran, Islamic Republic of
+										</option>
+									
+										<option value="IRQ">
+											Iraq
+										</option>
+									
+										<option value="IRL">
+											Ireland
+										</option>
+									
+										<option value="IMN">
+											Isle of Man
+										</option>
+									
+										<option value="ISR">
+											Israel
+										</option>
+									
+										<option value="ITA">
+											Italy
+										</option>
+									
+										<option value="JAM">
+											Jamaica
+										</option>
+									
+										<option value="JPN">
+											Japan
+										</option>
+									
+										<option value="JEY">
+											Jersey
+										</option>
+									
+										<option value="JOR">
+											Jordan
+										</option>
+									
+										<option value="KAZ">
+											Kazakhstan
+										</option>
+									
+										<option value="KEN">
+											Kenya
+										</option>
+									
+										<option value="KIR">
+											Kiribati
+										</option>
+									
+										<option value="PRK">
+											Korea, Democratic People's Republic of
+										</option>
+									
+										<option value="KOR">
+											Korea, Republic of
+										</option>
+									
+										<option value="XKX">
+											Kosovo
+										</option>
+									
+										<option value="KWT">
+											Kuwait
+										</option>
+									
+										<option value="KGZ">
+											Kyrgyzstan
+										</option>
+									
+										<option value="LAO">
+											Lao People's Democratic Republic
+										</option>
+									
+										<option value="LVA">
+											Latvia
+										</option>
+									
+										<option value="LBN">
+											Lebanon
+										</option>
+									
+										<option value="LSO">
+											Lesotho
+										</option>
+									
+										<option value="LBR">
+											Liberia
+										</option>
+									
+										<option value="LBY">
+											Libyan Arab Jamahiriya
+										</option>
+									
+										<option value="LIE">
+											Liechtenstein
+										</option>
+									
+										<option value="LTU">
+											Lithuania
+										</option>
+									
+										<option value="LUX">
+											Luxembourg
+										</option>
+									
+										<option value="MAC">
+											Macao
+										</option>
+									
+										<option value="MKD">
+											Macedonia, the former Yugoslav Republic of
+										</option>
+									
+										<option value="MDG">
+											Madagascar
+										</option>
+									
+										<option value="MWI">
+											Malawi
+										</option>
+									
+										<option value="MYS">
+											Malaysia
+										</option>
+									
+										<option value="MDV">
+											Maldives
+										</option>
+									
+										<option value="MLI">
+											Mali
+										</option>
+									
+										<option value="MLT">
+											Malta
+										</option>
+									
+										<option value="MHL">
+											Marshall Islands
+										</option>
+									
+										<option value="MTQ">
+											Martinique
+										</option>
+									
+										<option value="MRT">
+											Mauritania
+										</option>
+									
+										<option value="MUS">
+											Mauritius
+										</option>
+									
+										<option value="MYT">
+											Mayotte
+										</option>
+									
+										<option value="MEX">
+											Mexico
+										</option>
+									
+										<option value="FSM">
+											Micronesia, Federated States of
+										</option>
+									
+										<option value="MDA">
+											Moldova, Republic of
+										</option>
+									
+										<option value="MCO">
+											Monaco
+										</option>
+									
+										<option value="MNG">
+											Mongolia
+										</option>
+									
+										<option value="MNE">
+											Montenegro
+										</option>
+									
+										<option value="MSR">
+											Montserrat
+										</option>
+									
+										<option value="MAR">
+											Morocco
+										</option>
+									
+										<option value="MOZ">
+											Mozambique
+										</option>
+									
+										<option value="MMR">
+											Myanmar
+										</option>
+									
+										<option value="NAM">
+											Namibia
+										</option>
+									
+										<option value="NRU">
+											Nauru
+										</option>
+									
+										<option value="NPL">
+											Nepal
+										</option>
+									
+										<option value="NLD">
+											Netherlands
+										</option>
+									
+										<option value="ANT">
+											Netherlands Antilles
+										</option>
+									
+										<option value="NCL">
+											New Caledonia
+										</option>
+									
+										<option value="NZL">
+											New Zealand
+										</option>
+									
+										<option value="NIC">
+											Nicaragua
+										</option>
+									
+										<option value="NER">
+											Niger
+										</option>
+									
+										<option value="NGA">
+											Nigeria
+										</option>
+									
+										<option value="NIU">
+											Niue
+										</option>
+									
+										<option value="NFK">
+											Norfolk Island
+										</option>
+									
+										<option value="MNP">
+											Northern Mariana Islands
+										</option>
+									
+										<option value="NOR">
+											Norway
+										</option>
+									
+										<option value="OMN">
+											Oman
+										</option>
+									
+										<option value="PAK">
+											Pakistan
+										</option>
+									
+										<option value="PLW">
+											Palau
+										</option>
+									
+										<option value="PSE">
+											Palestinian Territory, Occupied
+										</option>
+									
+										<option value="PAN">
+											Panama
+										</option>
+									
+										<option value="PNG">
+											Papua New Guinea
+										</option>
+									
+										<option value="PRY">
+											Paraguay
+										</option>
+									
+										<option value="PER">
+											Peru
+										</option>
+									
+										<option value="PHL">
+											Philippines
+										</option>
+									
+										<option value="PCN">
+											Pitcairn
+										</option>
+									
+										<option value="POL">
+											Poland
+										</option>
+									
+										<option value="PRT">
+											Portugal
+										</option>
+									
+										<option value="PRI">
+											Puerto Rico
+										</option>
+									
+										<option value="QAT">
+											Qatar
+										</option>
+									
+										<option value="REU">
+											Reunion
+										</option>
+									
+										<option value="ROU">
+											Romania
+										</option>
+									
+										<option value="RUS">
+											Russian Federation
+										</option>
+									
+										<option value="RWA">
+											Rwanda
+										</option>
+									
+										<option value="BLM">
+											Saint Barthelemy
+										</option>
+									
+										<option value="SHN">
+											Saint Helena
+										</option>
+									
+										<option value="KNA">
+											Saint Kitts and Nevis
+										</option>
+									
+										<option value="LCA">
+											Saint Lucia
+										</option>
+									
+										<option value="MAF">
+											Saint Martin (French part)
+										</option>
+									
+										<option value="SPM">
+											Saint Pierre and Miquelon
+										</option>
+									
+										<option value="VCT">
+											Saint Vincent and the Grenadines
+										</option>
+									
+										<option value="WSM">
+											Samoa
+										</option>
+									
+										<option value="SMR">
+											San Marino
+										</option>
+									
+										<option value="STP">
+											Sao Tome and Principe
+										</option>
+									
+										<option value="SAU">
+											Saudi Arabia
+										</option>
+									
+										<option value="SEN">
+											Senegal
+										</option>
+									
+										<option value="SRB">
+											Serbia
+										</option>
+									
+										<option value="SYC">
+											Seychelles
+										</option>
+									
+										<option value="SLE">
+											Sierra Leone
+										</option>
+									
+										<option value="SGP">
+											Singapore
+										</option>
+									
+										<option value="SXM">
+											Sint Maarten
+										</option>
+									
+										<option value="SVK">
+											Slovakia
+										</option>
+									
+										<option value="SVN">
+											Slovenia
+										</option>
+									
+										<option value="SLB">
+											Solomon Islands
+										</option>
+									
+										<option value="SOM">
+											Somalia
+										</option>
+									
+										<option value="ZAF">
+											South Africa
+										</option>
+									
+										<option value="SGS">
+											South Georgia and the South Sandwich Islands
+										</option>
+									
+										<option value="SSD">
+											South Sudan
+										</option>
+									
+										<option value="ESP">
+											Spain
+										</option>
+									
+										<option value="LKA">
+											Sri Lanka
+										</option>
+									
+										<option value="SDN">
+											Sudan
+										</option>
+									
+										<option value="SUR">
+											Suriname
+										</option>
+									
+										<option value="SJM">
+											Svalbard and Jan Mayen
+										</option>
+									
+										<option value="SWZ">
+											Swaziland
+										</option>
+									
+										<option value="SWE">
+											Sweden
+										</option>
+									
+										<option value="CHE">
+											Switzerland
+										</option>
+									
+										<option value="SYR">
+											Syrian Arab Republic
+										</option>
+									
+										<option value="TWN">
+											Taiwan
+										</option>
+									
+										<option value="TJK">
+											Tajikistan
+										</option>
+									
+										<option value="TZA">
+											Tanzania, United Republic of
+										</option>
+									
+										<option value="THA">
+											Thailand
+										</option>
+									
+										<option value="TLS">
+											Timor-Leste
+										</option>
+									
+										<option value="TGO">
+											Togo
+										</option>
+									
+										<option value="TKL">
+											Tokelau
+										</option>
+									
+										<option value="TON">
+											Tonga
+										</option>
+									
+										<option value="TTO">
+											Trinidad and Tobago
+										</option>
+									
+										<option value="TUN">
+											Tunisia
+										</option>
+									
+										<option value="TUR">
+											Turkey
+										</option>
+									
+										<option value="TKM">
+											Turkmenistan
+										</option>
+									
+										<option value="TCA">
+											Turks and Caicos Islands
+										</option>
+									
+										<option value="TUV">
+											Tuvalu
+										</option>
+									
+										<option value="UGA">
+											Uganda
+										</option>
+									
+										<option value="UKR">
+											Ukraine
+										</option>
+									
+										<option value="ARE">
+											United Arab Emirates
+										</option>
+									
+										<option value="GBR">
+											United Kingdom
+										</option>
+									
+										<option value="USA">
+											United States
+										</option>
+									
+										<option value="UMI">
+											United States Minor Outlying Islands
+										</option>
+									
+										<option value="URY">
+											Uruguay
+										</option>
+									
+										<option value="UZB">
+											Uzbekistan
+										</option>
+									
+										<option value="VUT">
+											Vanuatu
+										</option>
+									
+										<option value="VEN">
+											Venezuela
+										</option>
+									
+										<option value="VNM">
+											Viet Nam
+										</option>
+									
+										<option value="VGB">
+											Virgin Islands, British
+										</option>
+									
+										<option value="VIR">
+											Virgin Islands, U.S.
+										</option>
+									
+										<option value="WLF">
+											Wallis and Futuna
+										</option>
+									
+										<option value="ESH">
+											Western Sahara
+										</option>
+									
+										<option value="YEM">
+											Yemen
+										</option>
+									
+										<option value="ZMB">
+											Zambia
+										</option>
+									
+										<option value="ZWE">
+											Zimbabwe
+										</option>
+									
+								</select>
+							
+							
+              
+							
+							
+							
+							
+							
+              
+							
+							
+							
+							
+							
+							
+						
+              
+							
+							
+							
+							
+							
+							
+              
+              
+              
+            
+            
+						
+						
+
+	                </div>
+	                <a class="tooltip" id="tooltip-creditCardCountry" href="#">
+						<span class="tooltip-text" id="tooltip-text-creditCardCountry"></span>
+					</a>
+		 			<div id="error-creditCardCountry" for="field_creditCardCountry" class="error-field"></div>
+	            
+                
+	            
+            
+	 </div>
+	      
+      
+      
+ 	
+      
+          
+        <div class="form-group" id="form-group-creditCardState">
+		  	
+			  	
+                
+	            
+		            <label class="form-label" id="form-label-creditCardState" for="input-creditCardState">
+		           		State	
+		            </label>
+	         	    <div class="form-element" id="form-element-creditCardState">
+	         	    	
+
+
+
+     
+		
+              
+              
+              
+              
+							
+							
+							
+							
+                <span id="creditcard-text-state">
+                  <input encrypt="false" type="text" id="input-creditCardState" class="text-input " name="field_creditCardState" maxlength="50" aria-describedby="error-creditCardState">
+                    
+                </span>
+                <span id="creditcard-us-state" style="display:none">
+                  <select encrypt="false" class="state-select-input " aria-describedby="error-creditCardState">
+                    
+                      <option value="" selected="selected">
+                        
+                        	
+							
+								- Select One -	
+							
+                        
+                        
+                      </option>
+                    
+                      <option value="Alabama">
+                        
+                        
+	                      	Alabama
+                        
+                      </option>
+                    
+                      <option value="Alaska">
+                        
+                        
+	                      	Alaska
+                        
+                      </option>
+                    
+                      <option value="Arizona">
+                        
+                        
+	                      	Arizona
+                        
+                      </option>
+                    
+                      <option value="Arkansas">
+                        
+                        
+	                      	Arkansas
+                        
+                      </option>
+                    
+                      <option value="Armed Forces">
+                        
+                        
+	                      	Armed Forces
+                        
+                      </option>
+                    
+                      <option value="Armed Forces America">
+                        
+                        
+	                      	Armed Forces America
+                        
+                      </option>
+                    
+                      <option value="Armed Forces Pacific">
+                        
+                        
+	                      	Armed Forces Pacific
+                        
+                      </option>
+                    
+                      <option value="California">
+                        
+                        
+	                      	California
+                        
+                      </option>
+                    
+                      <option value="Colorado">
+                        
+                        
+	                      	Colorado
+                        
+                      </option>
+                    
+                      <option value="Connecticut">
+                        
+                        
+	                      	Connecticut
+                        
+                      </option>
+                    
+                      <option value="Delaware">
+                        
+                        
+	                      	Delaware
+                        
+                      </option>
+                    
+                      <option value="Florida">
+                        
+                        
+	                      	Florida
+                        
+                      </option>
+                    
+                      <option value="Georgia">
+                        
+                        
+	                      	Georgia
+                        
+                      </option>
+                    
+                      <option value="Guam">
+                        
+                        
+	                      	Guam
+                        
+                      </option>
+                    
+                      <option value="Hawaii">
+                        
+                        
+	                      	Hawaii
+                        
+                      </option>
+                    
+                      <option value="Idaho">
+                        
+                        
+	                      	Idaho
+                        
+                      </option>
+                    
+                      <option value="Illinois">
+                        
+                        
+	                      	Illinois
+                        
+                      </option>
+                    
+                      <option value="Indiana">
+                        
+                        
+	                      	Indiana
+                        
+                      </option>
+                    
+                      <option value="Iowa">
+                        
+                        
+	                      	Iowa
+                        
+                      </option>
+                    
+                      <option value="Kansas">
+                        
+                        
+	                      	Kansas
+                        
+                      </option>
+                    
+                      <option value="Kentucky">
+                        
+                        
+	                      	Kentucky
+                        
+                      </option>
+                    
+                      <option value="Louisiana">
+                        
+                        
+	                      	Louisiana
+                        
+                      </option>
+                    
+                      <option value="Maine">
+                        
+                        
+	                      	Maine
+                        
+                      </option>
+                    
+                      <option value="Maryland">
+                        
+                        
+	                      	Maryland
+                        
+                      </option>
+                    
+                      <option value="Massachusetts">
+                        
+                        
+	                      	Massachusetts
+                        
+                      </option>
+                    
+                      <option value="Michigan">
+                        
+                        
+	                      	Michigan
+                        
+                      </option>
+                    
+                      <option value="Minnesota">
+                        
+                        
+	                      	Minnesota
+                        
+                      </option>
+                    
+                      <option value="Mississippi">
+                        
+                        
+	                      	Mississippi
+                        
+                      </option>
+                    
+                      <option value="Missouri">
+                        
+                        
+	                      	Missouri
+                        
+                      </option>
+                    
+                      <option value="Montana">
+                        
+                        
+	                      	Montana
+                        
+                      </option>
+                    
+                      <option value="Nebraska">
+                        
+                        
+	                      	Nebraska
+                        
+                      </option>
+                    
+                      <option value="Nevada">
+                        
+                        
+	                      	Nevada
+                        
+                      </option>
+                    
+                      <option value="New Hampshire">
+                        
+                        
+	                      	New Hampshire
+                        
+                      </option>
+                    
+                      <option value="New Jersey">
+                        
+                        
+	                      	New Jersey
+                        
+                      </option>
+                    
+                      <option value="New Mexico">
+                        
+                        
+	                      	New Mexico
+                        
+                      </option>
+                    
+                      <option value="New York">
+                        
+                        
+	                      	New York
+                        
+                      </option>
+                    
+                      <option value="North Carolina">
+                        
+                        
+	                      	North Carolina
+                        
+                      </option>
+                    
+                      <option value="North Dakota">
+                        
+                        
+	                      	North Dakota
+                        
+                      </option>
+                    
+                      <option value="Ohio">
+                        
+                        
+	                      	Ohio
+                        
+                      </option>
+                    
+                      <option value="Oklahoma">
+                        
+                        
+	                      	Oklahoma
+                        
+                      </option>
+                    
+                      <option value="Oregon">
+                        
+                        
+	                      	Oregon
+                        
+                      </option>
+                    
+                      <option value="Pennsylvania">
+                        
+                        
+	                      	Pennsylvania
+                        
+                      </option>
+                    
+                      <option value="Puerto Rico">
+                        
+                        
+	                      	Puerto Rico
+                        
+                      </option>
+                    
+                      <option value="Rhode Island">
+                        
+                        
+	                      	Rhode Island
+                        
+                      </option>
+                    
+                      <option value="South Carolina">
+                        
+                        
+	                      	South Carolina
+                        
+                      </option>
+                    
+                      <option value="South Dakota">
+                        
+                        
+	                      	South Dakota
+                        
+                      </option>
+                    
+                      <option value="Tennessee">
+                        
+                        
+	                      	Tennessee
+                        
+                      </option>
+                    
+                      <option value="Texas">
+                        
+                        
+	                      	Texas
+                        
+                      </option>
+                    
+                      <option value="Utah">
+                        
+                        
+	                      	Utah
+                        
+                      </option>
+                    
+                      <option value="Vermont">
+                        
+                        
+	                      	Vermont
+                        
+                      </option>
+                    
+                      <option value="Virgin Islands">
+                        
+                        
+	                      	Virgin Islands
+                        
+                      </option>
+                    
+                      <option value="Virginia">
+                        
+                        
+	                      	Virginia
+                        
+                      </option>
+                    
+                      <option value="Washington">
+                        
+                        
+	                      	Washington
+                        
+                      </option>
+                    
+                      <option value="Washington DC">
+                        
+                        
+	                      	Washington DC
+                        
+                      </option>
+                    
+                      <option value="West Virginia">
+                        
+                        
+	                      	West Virginia
+                        
+                      </option>
+                    
+                      <option value="Wisconsin">
+                        
+                        
+	                      	Wisconsin
+                        
+                      </option>
+                    
+                      <option value="Wyoming">
+                        
+                        
+	                      	Wyoming
+                        
+                      </option>
+                    
+                  </select>
+                </span>
+                <span id="creditcard-can-state" style="display:none">
+                  <select encrypt="false" class="state-select-input  " aria-describedby="error-creditCardState">
+                    
+                      <option value="" selected="selected">
+                        
+                        	
+							
+								- Select One -	
+							
+                        
+                        
+                      </option>
+                    
+                      <option value="Alberta">
+                        
+                        
+                      		Alberta
+                        
+                      </option>
+                    
+                      <option value="British Columbia">
+                        
+                        
+                      		British Columbia
+                        
+                      </option>
+                    
+                      <option value="Manitoba">
+                        
+                        
+                      		Manitoba
+                        
+                      </option>
+                    
+                      <option value="New Brunswick">
+                        
+                        
+                      		New Brunswick
+                        
+                      </option>
+                    
+                      <option value="Newfoundland and Labrador">
+                        
+                        
+                      		Newfoundland and Labrador
+                        
+                      </option>
+                    
+                      <option value="Northwest Territories">
+                        
+                        
+                      		Northwest Territories
+                        
+                      </option>
+                    
+                      <option value="Nova Scotia">
+                        
+                        
+                      		Nova Scotia
+                        
+                      </option>
+                    
+                      <option value="Nunavut">
+                        
+                        
+                      		Nunavut
+                        
+                      </option>
+                    
+                      <option value="Ontario">
+                        
+                        
+                      		Ontario
+                        
+                      </option>
+                    
+                      <option value="Prince Edward Island">
+                        
+                        
+                      		Prince Edward Island
+                        
+                      </option>
+                    
+                      <option value="Quebec">
+                        
+                        
+                      		Quebec
+                        
+                      </option>
+                    
+                      <option value="Saskatchewan">
+                        
+                        
+                      		Saskatchewan
+                        
+                      </option>
+                    
+                      <option value="Yukon">
+                        
+                        
+                      		Yukon
+                        
+                      </option>
+                    
+                  </select>
+                </span>
+              
+              
+							
+							
+							
+							
+							
+              
+							
+							
+							
+							
+							
+							
+						
+              
+							
+							
+							
+							
+							
+							
+              
+              
+              
+            
+            
+						
+						
+
+	         	    </div>
+	         	    <a class="tooltip" id="tooltip-creditCardState" href="#">
+						<span class="tooltip-text" id="tooltip-text-creditCardState"></span>
+					</a>
+		 			<div id="error-creditCardState" for="field_creditCardState" class="error-field"></div>
+	            
+            
+	 </div>
+	      
+      
+      
+ 	
+      
+             
+      
+      
+ 	
+      
+             
+      
+      
+ 	
+      
+             
+      
+      
+ 	
+      
+          
+        <div class="form-group" id="form-group-creditCardPostalCode">
+		  	
+			  	
+	                <label class="form-label required" id="form-label-creditCardPostalCode" for="input-creditCardPostalCode">
+		           		Postal Code	
+		            </label>
+	                
+	                <div class="form-element required" id="form-element-creditCardPostalCode">
+	                	
+
+
+
+     
+		
+              
+              
+              
+              
+							
+							
+							
+							
+              
+							
+							
+							
+							
+							
+              
+							
+							
+							
+							
+							
+							
+						
+              
+							
+							
+							
+							
+							
+							
+              
+              
+              
+                
+                
+                
+                <input type="text" id="input-creditCardPostalCode" class="text-input" name="field_creditCardPostalCode" maxlength="20" encrypt="false" aria-required="true" aria-describedby="error-creditCardPostalCode">
+                
+                
+              
+            
+            
+						
+						
+
+	                </div>
+	                <a class="tooltip" id="tooltip-creditCardPostalCode" href="#">
+						<span class="tooltip-text" id="tooltip-text-creditCardPostalCode"></span>
+					</a>
+		 			<div id="error-creditCardPostalCode" for="field_creditCardPostalCode" class="error-field"></div>
+	            
+                
+	            
+            
+	 </div>
+	      
+      
+      
+ 	
+      
+             
+      
+      
+ 	
+      
+             
+      
+      
+ 	
+ 	
+	
+	       <div class="bottom">
+	           <div class="required-desc">&nbsp;= Required Field</div>
+	           <div id="zuoraCaptcha" class="g-recaptcha"></div>
+				
+		           
+		           	
+	          			 <a href="javascript:" id="submitButton" class="btn-submit" onclick="ZLT.submit();"> Submit</a>
+		           	
+	           
+	       </div>
+	    
+</div>
+
+
+<div id="mandate_page_popup" class="mandatePage" style="display:none;">
+    
+</div>
+
+  
+ <script type="text/javascript">
+    (function($) {
+      /**
+       * PAY-9996: this is a workaround to fix the issue on Safari in iphone ios 11.3.
+       */
+      $(document).on("touchstart", function(){});
+    })(jQuery);
+</script>
+
+
+</div></div></form><div id="__lpform_input-creditCardNumber" style="max-height: 16px; vertical-align: top; position: absolute; top: 0px; left: -18px; z-index: 14;"><img id="__lpform_input-creditCardNumber_icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAOFJREFUOBHFUjsSgjAQJYkFNJ5AzmJt64weQe/kEXQs5SI01sINLKAh8T3IjsCIoo5jZja7eXn7dvMJgr8PY8xCKZXB3JuW+Vx1wSniD0+SBa2qSRRFMxqwRPAhYdmHV46kMAzjoihyxhCJy7JkZyxwoO8P59yK2KS/4de1KGMhDvDuAqi4Q+UNiYwlQWu9lrjtrbV7rrWAaDWFWW+p4C89Evh8xz6RmN97+rz1HaDNU1VVHQ1iaHMJkVGXeO1kN4sag8jDO2B3pMF/95HwG80ZTzWH2LQpPHrOccztaPbPiDcgS12+ITUDKQAAAABJRU5ErkJggg==" style="opacity: 0.6; vertical-align: top;" width="0" height="0"></div></body></html>

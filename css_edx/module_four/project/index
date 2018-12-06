@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+  <head>
+    <title> Mark Teffeteller Resume</title>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="style.css">
+  </head>
+
+  <body>
+  <header>
+      <h1> <span>Mark</span> Teffeteller</h1>
+      <ul id="navBar">
+          <li><img class="Icons" src="/Users/markteffeteller/web_projects/css_edx/module_four/project/images/phone.png" alt="phone"></li>
+          <li><img class="Icons" src="/Users/markteffeteller/web_projects/css_edx/module_four/project/images/email.png" alt="email icon"></li>
+          <li><img class="Icons" src="/Users/markteffeteller/web_projects/css_edx/module_four/project/images/git.png" alt="github logo"></li>
+      </ul>
+  </header>
+
+
+  <article id="boxWork">
+      <h3> Work Experience </h3>
+      <h5> NetSpend </h5>
+      <span class="workDesc">At NetSpend, I work as an analyst on back-end systems</span>
+      <h5> CrowdStrike </h5>
+      <span class="workDesc">At CrowdStrike, I was an intern for cyber threat intelligence (CTI)</span>
+      <h5> McCombs Business School </h5>
+      <span class="workDesc">At McCombs Busine School, I was a computer specialist</span>
+   </article>
+
+  <section id="boxRightElements">
+      <div> <h4>Education</h4> </div>
+      <p> BBA, MIS <br> The University of Texas at Austin</p>
+      <div> <h4>Interests</h4> </div>
+      <p> Music <br> Soccer <br> Technology <br> People</p>
+      <div> <h4 id="Objective">Obective</h4> </div>
+      <p> After graduating, I have decidede that i
+          <br> want to delve more into web development<br>
+          I want to be able to build something from<br>
+          the goung up! Thanks for reading.</p>
+  </section>
+  </body>
+
+  <footer>
+     <p>Thank you and please visit again soon!</p>
+  </footer>

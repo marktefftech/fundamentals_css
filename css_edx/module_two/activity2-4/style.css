@@ -1,0 +1,26 @@
+
+
+    h1  {
+        background-color: black;
+        color: #ccffcc;
+        text-decoration: underline;
+    }
+
+    h2 {
+      text-decoration: underline;
+    }
+
+    p  {
+
+        border: 3px solid;
+    }
+
+    body,p  {
+
+        background-color: #ccffcc;
+        color: black;
+    }
+
+    ul,ol  {
+        background-color: yellow;
+    }

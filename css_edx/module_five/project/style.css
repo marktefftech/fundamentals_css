@@ -1,0 +1,90 @@
+
+#navBar {
+          display: inline-block;
+          border: .1em black dotted;
+          color: white;
+          padding-right: 3em;
+          background-color: #9a998f;
+          border-radius: 25px;
+        }
+
+span {
+    color: black;
+}
+
+ul li {
+        text-align: center;
+        display: inline-block;
+        padding: 1em;
+      }
+
+.Icons {
+        width: 50px;
+        display: inline-block;
+        height: 50px;
+}
+
+
+header  {
+          border: .4em #9a998f solid;
+          border-radius: 25px;
+          font-size: .75em;
+          max-width: 40%;
+          margin-left: 30%;
+        }
+
+body    {
+          background-color: #fff7c2;
+          text-align: center;
+
+        }
+
+h1      {
+    text-align: center;
+    color: #9a998f;
+    font-size: 5em;
+  }
+
+h2      {
+  font-size: 3em;
+  text-align: left;
+
+        }
+
+h3 {
+  font-size: 3em;
+  border-bottom: 2px black double;
+}
+
+.workDesc{
+  text-align: left;
+}
+
+
+#boxWork {
+    margin-top: 2%;
+    background-color: #9a998f;
+    border-radius: 25px;
+    float: left;
+    width: 45%;
+    padding: 1em;
+          }
+
+#boxRightElements {
+    margin-top: 2%;
+    margin-left: 55%;
+    background-color: #9a998f;
+    border-radius: 25px;
+    margin-bottom: 5%;
+    height: 40%;
+    padding: 1em;
+          }
+
+
+footer {
+  border: .4em #9a998f solid;
+  border-radius: 25px;
+  padding: 1em;
+  width: 30%;
+  margin-left: 35%;
+}
